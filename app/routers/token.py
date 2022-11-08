@@ -48,11 +48,11 @@ async def delete_token(id: PyObjectId, user: UserInDB = Depends(get_actual_user)
     item = Token(token="", username=user.username)
     item.id = id
     if item.id is None:
-        return Result(code=0, message="ID token not Found"), status.HTTP_404_NOT_FOUND
+        return Result(message="ID token not Found"), status.HTTP_404_NOT_FOUND
 
     ret = TokenService.get_by_id_and_user(item)
     if ret is None:
-        return Result(code=0, message="Token not Found"), status.HTTP_404_NOT_FOUND
+        return Result(message="Token not Found"), status.HTTP_404_NOT_FOUND
 
     item.username_update = user.username
     ret = TokenService.delete(item)

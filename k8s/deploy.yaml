@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: cookbookbo-api
+  name: cookbookbo-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cookbookbo-api
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: cookbookbo-api
+    spec:
+      containers:
+      - image: cookbookbo-api-app:latest
+        name: cookbookbo-api-app
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 8000
+        envFrom:
+          - secretRef:
+              name: cookbookbo-api
+        resources: {}
+status: {}

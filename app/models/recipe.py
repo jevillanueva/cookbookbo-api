@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from bson import ObjectId
 from pydantic import BaseModel
@@ -11,21 +11,20 @@ from app.utils.mongo_validator import PyObjectId
 
 class Ingredient(BaseModel):
     name: str
-    quantity: float
-    unit: str
-
-
-class Ingredients(BaseModel):
-    type: str = "principal"
-    ingredients: List[Ingredient]
+    optional: bool = False
+    quantity_si: float
+    unit_si: Literal["kg","g","mg","l","dl","cl","ml","unit","unknow"]
+    quantity_equivalence: float
+    unit_equivalence: str
 
 
 class Step(BaseModel):
     detail: str
 
 
-class Steps(BaseModel):
-    type: str = "principal"
+class Preparation(BaseModel):
+    name: str = "principal"
+    ingredients: List[Ingredient]
     steps: List[Step]
 
 
@@ -39,12 +38,11 @@ class Recipe(Base):
     tags: List[str]
     year: int = 0
     location: Optional[str] = None
-    category: str = "unknow"
+    category: List[str] = ["unknow"]
     portion: int = 0
     preparation_time_minutes: int = 0
     calification: int = 0
-    ingredients: List[Ingredients]
-    steps: List[Steps]
+    preparation: List[Preparation]
     image_url: Optional[str] = None
 
 

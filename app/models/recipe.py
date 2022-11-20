@@ -13,7 +13,7 @@ class Ingredient(BaseModel):
     name: str
     optional: bool = False
     quantity_si: float
-    unit_si: Literal["kg","g","mg","l","dl","cl","ml","unit","unknow"]
+    unit_si: Literal["kg","g","mg","l","dl","cl","ml","unknow"]
     quantity_equivalence: float
     unit_equivalence: str
 

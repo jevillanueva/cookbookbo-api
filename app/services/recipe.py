@@ -113,3 +113,36 @@ class RecipeService:
         for find in search:
             items.append(Recipe(**find))
         return items
+
+    @classmethod
+    def search_by_name(
+        cls, q: str, page_number: int = 0, n_per_page: int = 100
+    ) -> List[Recipe]:
+        search = (
+            cls.TABLE.find(
+                {
+                    "$and": [
+                        {"disabled": False},
+                        {"name": {"$regex": q, "$options": "i"}},
+                    ]
+                }
+            )
+            .skip(((page_number - 1) * n_per_page) if page_number > 0 else 0)
+            .limit(n_per_page)
+        )
+        items = []
+        for find in search:
+            items.append(Recipe(**find))
+        return items
+
+    @classmethod
+    def list_random(cls, page_number: int = 0, n_per_page: int = 100) -> List[Recipe]:
+        search = (
+            cls.TABLE.find({"disabled": False, "$expr": {"$lt": [0.5, {"$rand": {}}]}})
+            .skip(((page_number - 1) * n_per_page) if page_number > 0 else 0)
+            .limit(n_per_page)
+        )
+        items = []
+        for find in search:
+            items.append(Recipe(**find))
+        return items

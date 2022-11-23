@@ -18,9 +18,9 @@ spec:
         app: cookbookbo-api
     spec:
       containers:
-      - image: cookbookbo-api-app:latest
-        name: cookbookbo-api-app
-        imagePullPolicy: IfNotPresent
+      - image: jevillanueva/cookbookbo-api:latest
+        name: cookbookbo-api
+        imagePullPolicy: Always
         ports:
           - containerPort: 8000
         envFrom:

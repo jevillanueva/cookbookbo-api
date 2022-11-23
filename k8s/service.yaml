@@ -3,16 +3,14 @@ kind: Service
 metadata:
   creationTimestamp: null
   labels:
-    app: cookbookbo-api-dev
-  name: cookbookbo-api-dev
+    app: cookbookbo-api
+  name: cookbookbo-api
 spec:
   ports:
   - port: 8000
     protocol: TCP
     targetPort: 8000
-    nodePort: 30007  #(default: 30000-32767)
   selector:
     app: cookbookbo-api
-  type: NodePort
 status:
   loadBalancer: {}

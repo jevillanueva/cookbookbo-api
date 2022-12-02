@@ -13,7 +13,7 @@ class Ingredient(BaseModel):
     name: str
     optional: bool = False
     quantity_si: float
-    unit_si: Literal["kg","g","mg","l","dl","cl","ml","unknow"]
+    unit_si: Literal["kg","g","mg","l","dl","cl","ml","unknown"]
     quantity_equivalence: float
     unit_equivalence: str
 
@@ -38,7 +38,7 @@ class Recipe(Base):
     tags: List[str]
     year: int = 0
     location: Optional[str] = None
-    category: List[str] = ["unknow"]
+    category: List[str] = ["unknown"]
     portion: int = 0
     preparation_time_minutes: int = 0
     calification: int = 0

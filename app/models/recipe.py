@@ -41,10 +41,16 @@ class Recipe(Base):
     category: List[str] = ["unknown"]
     portion: int = 0
     preparation_time_minutes: int = 0
-    calification: int = 0
+    score: int = 0
     preparation: List[Preparation]
     image_url: Optional[str] = None
+    published: bool = False
+    
 
+
+class RecipePublic(Base):
+    content: List[Recipe]
+    total: Optional[int] = 0
 
 class RecipeInDB(Recipe):
     disabled: Optional[bool] = False

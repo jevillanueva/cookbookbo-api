@@ -6,7 +6,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse, HTMLResponse
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.staticfiles import StaticFiles
-
+from fastapi.middleware.cors import CORSMiddleware
 from app.auth.access import get_actual_user
 from app.core import configuration
 from app.routers import oauth_google, recipe, token, users, page, page_render
@@ -26,7 +26,12 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.add_middleware(
     SessionMiddleware, secret_key=configuration.APP_SECRET_KEY_MIDDLEWARE
 )
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/", tags=["Index"])
 def read_root():

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Response, status
 from fastapi.responses import JSONResponse
 
 from app.auth.access import get_actual_user, get_api_key
-from app.models.recipe import Recipe, RecipeInDB
+from app.models.recipe import Recipe, RecipeInDB, RecipePublic
 from app.models.result import Result
 from app.models.user import User, UserInDB
 from app.services.recipe import RecipeService
@@ -100,8 +100,26 @@ async def get_recipe_skill(
 ):
     if q is not None:
         search = RecipeService.search_by_name(
-            q=q, page_number=page_number, n_per_page=n_per_page
+            q=q, page_number=page_number, n_per_page=n_per_page, published=True
         )
     else:
-        search = RecipeService.list_random(page_number=page_number, n_per_page=n_per_page)
+        search = RecipeService.list_random(page_number=page_number, n_per_page=n_per_page, published=True)
     return search
+
+@router.get("/public", response_model=RecipePublic, status_code=status.HTTP_200_OK)
+async def get_recipe(
+    search: Optional[str] = None,
+    page: int = 0,
+    size: int = 10,
+):
+    if search is not None:
+        search_recipes = RecipeService.search_public(
+            q=search, page_number=page, n_per_page=size, published=True
+        )
+        count_recipes = RecipeService.count_public(q=search, published=True)
+        print ("count_recipes", count_recipes, search)
+    else:
+        search_recipes = RecipeService.list_public(page_number=page, n_per_page=size, published=True)
+        count_recipes = RecipeService.count_public(published=True)
+        print ("count_recipes", count_recipes)
+    return RecipePublic(content=search_recipes, total=count_recipes)

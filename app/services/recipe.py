@@ -82,6 +82,18 @@ class RecipeService:
         for find in search:
             items.append(Recipe(**find))
         return items
+    
+    @classmethod
+    def list_public(cls, page_number: int = 0, n_per_page: int = 100, published: bool = True) -> List[Recipe]:
+        search = (
+            cls.TABLE.find({"disabled": False, "published": published})
+            .skip(((page_number - 1) * n_per_page) if page_number > 0 else 0)
+            .limit(n_per_page)
+        )
+        items = []
+        for find in search:
+            items.append(Recipe(**find))
+        return items
 
     @classmethod
     def search(
@@ -113,16 +125,100 @@ class RecipeService:
         for find in search:
             items.append(Recipe(**find))
         return items
-
+    
     @classmethod
-    def search_by_name(
-        cls, q: str, page_number: int = 0, n_per_page: int = 100
+    def search_public(
+        cls, q: str, page_number: int = 0, n_per_page: int = 100, published: bool = True
     ) -> List[Recipe]:
         search = (
             cls.TABLE.find(
                 {
                     "$and": [
                         {"disabled": False},
+                        {"published": published},
+                        {
+                            "$or": [
+                                {
+                                    "description": {
+                                        "$regex": q,
+                                        "$options": "i",
+                                    }
+                                },
+                                {"name": {"$regex": q, "$options": "i"}},
+                            ]
+                        },
+                    ]
+                }
+            )
+            .skip(((page_number - 1) * n_per_page) if page_number > 0 else 0)
+            .limit(n_per_page)
+        )
+        items = []
+        for find in search:
+            items.append(Recipe(**find))
+        return items
+
+    @classmethod
+    def count(cls, q: str = "") -> int:
+        if q == "":
+            count = cls.TABLE.count_documents({"disabled": False})
+        else:
+            count = cls.TABLE.count_documents(
+                {
+                    "$and": [
+                        {"disabled": False},
+                        {
+                            "$or": [
+                                {
+                                    "description": {
+                                        "$regex": q,
+                                        "$options": "i",
+                                    }
+                                },
+                                {"name": {"$regex": q, "$options": "i"}},
+                            ]
+                        },
+                    ]
+                }
+            )
+        return count
+    
+    @classmethod
+    def count_public(cls, q: str = "", published: bool = True ) -> int:
+        if q == "":
+            count = cls.TABLE.count_documents({"disabled": False, "published": published})
+        else:
+            count = cls.TABLE.count_documents(
+                {
+                    "$and": [
+                        {"disabled": False},
+                        {"published": published},
+                        {
+                            "$or": [
+                                {
+                                    "description": {
+                                        "$regex": q,
+                                        "$options": "i",
+                                    }
+                                },
+                                {"name": {"$regex": q, "$options": "i"}},
+                            ]
+                        },
+                    ]
+                }
+            )
+        return count
+
+    @classmethod
+    def search_by_name(
+        cls, q: str, page_number: int = 0, n_per_page: int = 100, published: bool = True
+    ) -> List[Recipe]:
+        search = (
+            cls.TABLE.find(
+                {
+                    "$and": [
+                        {"disabled": False},
+                        {"published": published},
                         {"name": {"$regex": q, "$options": "i"}},
                     ]
                 }
@@ -136,11 +232,26 @@ class RecipeService:
         return items
 
     @classmethod
-    def list_random(cls, page_number: int = 0, n_per_page: int = 100) -> List[Recipe]:
+    def list_random(
+        cls, page_number: int = 0, n_per_page: int = 100, published: bool = True
+    ) -> List[Recipe]:
+        print (published)
         search = (
-            cls.TABLE.find({"disabled": False, "$expr": {"$lt": [0.5, {"$rand": {}}]}})
-            .skip(((page_number - 1) * n_per_page) if page_number > 0 else 0)
-            .limit(n_per_page)
+            cls.TABLE.aggregate(
+                [
+                    {
+                        "$match": {
+                            "$and": [
+                                {"disabled": False},
+                                {"published": published},
+                            ]
+                        }
+                    },
+                    {"$sample": {"size": n_per_page}},
+                    {"$skip": ((page_number - 1) * n_per_page) if page_number > 0 else 0},
+                    {"$limit": n_per_page},
+                ]
+            )
         )
         items = []
         for find in search:

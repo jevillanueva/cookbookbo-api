@@ -79,7 +79,7 @@ async def update_recipe(item: Recipe, user: UserInDB = Depends(get_actual_user))
     },
 )
 async def delete_recipe(id: PyObjectId, user: UserInDB = Depends(get_actual_user)):
-    itemDB = RecipeInDB(tags=[], steps=[], ingredients=[])
+    itemDB = RecipeInDB(tags=[], steps=[], preparation=[])
     itemDB.id = id
     itemDB.username_update = user.username
     deleted = RecipeService.delete(item=itemDB)
@@ -89,6 +89,44 @@ async def delete_recipe(id: PyObjectId, user: UserInDB = Depends(get_actual_user
             content=Result(message="Recipe Not Found").dict(),
         )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@router.patch(
+    "/publish",
+    responses={
+        status.HTTP_404_NOT_FOUND: {"model": Result},
+        status.HTTP_200_OK: {"model": Recipe},
+    },
+)
+async def publish_recipe(id: PyObjectId, user: UserInDB = Depends(get_actual_user)):
+    itemDB = RecipeInDB(tags=[], steps=[], preparation=[])
+    itemDB.id = id
+    itemDB.username_update = user.username
+    publish = RecipeService.publish(item=itemDB, published=True)
+    if publish is None:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=Result(message="Recipe Not Found").dict(),
+        )
+    return publish
+
+@router.patch(
+    "/unpublish",
+    responses={
+        status.HTTP_404_NOT_FOUND: {"model": Result},
+        status.HTTP_200_OK: {"model": Recipe},
+    },
+)
+async def unpublish_recipe(id: PyObjectId, user: UserInDB = Depends(get_actual_user)):
+    itemDB = RecipeInDB(tags=[], steps=[], preparation=[])
+    itemDB.id = id
+    itemDB.username_update = user.username
+    publish = RecipeService.publish(item=itemDB, published=False)
+    if publish is None:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=Result(message="Recipe Not Found").dict(),
+        )
+    return publish
 
 
 @router.get("/skill", response_model=List[Recipe], status_code=status.HTTP_200_OK)
@@ -123,3 +161,18 @@ async def get_recipe(
         count_recipes = RecipeService.count_public(published=True)
         print ("count_recipes", count_recipes)
     return RecipePublic(content=search_recipes, total=count_recipes)
+
+@router.get("/public/{id}", responses={
+        status.HTTP_404_NOT_FOUND: {"model": Result},
+        status.HTTP_200_OK: {"model": Recipe},
+    })
+async def get_recipe(
+    id: PyObjectId
+):
+    recipe = RecipeService.get_public(id=id)
+    if recipe is None:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=Result(message="Recipe Not Found").dict(),
+        )
+    return recipe

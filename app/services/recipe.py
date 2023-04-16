@@ -62,10 +62,37 @@ class RecipeService:
             return Recipe(**ret)
         else:
             return None
+        
+    @classmethod
+    def publish(cls, item: RecipeInDB, published: bool) -> Recipe | None:
+        item.date_update = datetime.utcnow()
+        ret = cls.TABLE.find_one_and_update(
+            {"_id": item.id, "disabled": False},
+            {
+                "$set": {
+                    "published": published,
+                    "date_update": item.date_update,
+                    "username_update": item.username_update,
+                }
+            },
+            return_document=ReturnDocument.AFTER,
+        )
+        if ret is not None:
+            return Recipe(**ret)
+        else:
+            return None
 
     @classmethod
     def get(cls, id: PyObjectId) -> Recipe | None:
         search = cls.TABLE.find_one({"_id": id, "disabled": False})
+        if search is not None:
+            return Recipe(**search)
+        else:
+            return None
+        
+    @classmethod
+    def get_public(cls, id: PyObjectId) -> Recipe | None:
+        search = cls.TABLE.find_one({"_id": id, "disabled": False, "published": True})
         if search is not None:
             return Recipe(**search)
         else:

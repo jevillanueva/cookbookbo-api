@@ -4,7 +4,7 @@ from typing import List
 from pymongo.collection import ReturnDocument
 
 from app.core.database import db
-from app.models.recipe import Recipe, RecipeInDB
+from app.models.recipe import FileBlob, Recipe, RecipeInDB
 from app.utils.mongo_validator import PyObjectId
 
 
@@ -284,3 +284,19 @@ class RecipeService:
         for find in search:
             items.append(Recipe(**find))
         return items
+    
+    @classmethod
+    def update_image(cls, id: PyObjectId, file: FileBlob) -> Recipe | None:
+        ret = cls.TABLE.find_one_and_update(
+            {"_id": id, "disabled": False},
+            {
+                "$set": {
+                    "image": {"name":file.name, "url": file.url, "content_type": file.content_type},
+                }
+            },
+            return_document=ReturnDocument.AFTER,
+        )
+        if ret is not None:
+            return Recipe(**ret)
+        else:
+            return None

@@ -1,14 +1,16 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Response, UploadFile, status
 from fastapi.responses import JSONResponse
 
 from app.auth.access import get_actual_user, get_api_key
-from app.models.recipe import Recipe, RecipeInDB, RecipePublic
+from app.models.recipe import FileBlob, Recipe, RecipeInDB, RecipePublic
 from app.models.result import Result
 from app.models.user import User, UserInDB
 from app.services.recipe import RecipeService
+from app.utils.content_types import CONTENT_TYPES_IMAGE, CONTENT_TYPES_VALID
 from app.utils.mongo_validator import PyObjectId
+from app.utils import google_cloud_storage
 
 router = APIRouter()
 
@@ -42,6 +44,47 @@ async def insert_recipe(
     itemDB = RecipeInDB(**item.dict(by_alias=True))
     itemDB.username_insert = user.username
     inserted = RecipeService.insert(item=itemDB)
+    return inserted
+
+
+@router.patch(
+    "/image",
+    response_model=Recipe,
+    responses={
+        status.HTTP_200_OK: {"model": Recipe},
+        status.HTTP_404_NOT_FOUND: {"model": Result},
+        status.HTTP_400_BAD_REQUEST: {"model": Result},
+    },
+)
+async def update_image_recipe(
+    id: PyObjectId,
+    file: UploadFile,
+    user: UserInDB = Depends(get_actual_user),
+):
+    if not file.content_type in CONTENT_TYPES_IMAGE:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content=Result(
+                message=f"File not is a image, please use this formats: {','.join(CONTENT_TYPES_VALID)}"
+            ).dict(),
+        )
+    inserted = RecipeService.get(id)
+    if inserted is None:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=Result(message="Recipe Not Found").dict(),
+        )
+
+    result, filename, url, content_type = google_cloud_storage.upload_file(
+        inserted.id, file.filename, file.content_type, file.file
+    )
+    # delete old image if exists after  upload new image
+    if inserted.image is not None and result:
+        deleted = google_cloud_storage.delete_file(inserted.image.name)
+        print(deleted)
+    if result:
+        blob = FileBlob(name=filename, url=url, content_type=content_type)
+        inserted = RecipeService.update_image(inserted.id, blob)
     return inserted
 
 
@@ -90,6 +133,7 @@ async def delete_recipe(id: PyObjectId, user: UserInDB = Depends(get_actual_user
         )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
+
 @router.patch(
     "/publish",
     responses={
@@ -108,6 +152,7 @@ async def publish_recipe(id: PyObjectId, user: UserInDB = Depends(get_actual_use
             content=Result(message="Recipe Not Found").dict(),
         )
     return publish
+
 
 @router.patch(
     "/unpublish",
@@ -141,8 +186,11 @@ async def get_recipe_skill(
             q=q, page_number=page_number, n_per_page=n_per_page, published=True
         )
     else:
-        search = RecipeService.list_random(page_number=page_number, n_per_page=n_per_page, published=True)
+        search = RecipeService.list_random(
+            page_number=page_number, n_per_page=n_per_page, published=True
+        )
     return search
+
 
 @router.get("/public", response_model=RecipePublic, status_code=status.HTTP_200_OK)
 async def get_recipe(
@@ -155,20 +203,24 @@ async def get_recipe(
             q=search, page_number=page, n_per_page=size, published=True
         )
         count_recipes = RecipeService.count_public(q=search, published=True)
-        print ("count_recipes", count_recipes, search)
+        print("count_recipes", count_recipes, search)
     else:
-        search_recipes = RecipeService.list_public(page_number=page, n_per_page=size, published=True)
+        search_recipes = RecipeService.list_public(
+            page_number=page, n_per_page=size, published=True
+        )
         count_recipes = RecipeService.count_public(published=True)
-        print ("count_recipes", count_recipes)
+        print("count_recipes", count_recipes)
     return RecipePublic(content=search_recipes, total=count_recipes)
 
-@router.get("/public/{id}", responses={
+
+@router.get(
+    "/public/{id}",
+    responses={
         status.HTTP_404_NOT_FOUND: {"model": Result},
         status.HTTP_200_OK: {"model": Recipe},
-    })
-async def get_recipe(
-    id: PyObjectId
-):
+    },
+)
+async def get_recipe(id: PyObjectId):
     recipe = RecipeService.get_public(id=id)
     if recipe is None:
         return JSONResponse(

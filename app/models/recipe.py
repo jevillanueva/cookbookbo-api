@@ -27,7 +27,10 @@ class Preparation(BaseModel):
     ingredients: List[Ingredient]
     steps: List[Step]
 
-
+class FileBlob(BaseModel):
+    name: str
+    url: str
+    content_type: str
 class Recipe(Base):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
     name: Optional[str] = None
@@ -43,7 +46,7 @@ class Recipe(Base):
     preparation_time_minutes: int = 0
     score: int = 0
     preparation: List[Preparation]
-    image_url: Optional[str] = None
+    image: Optional[FileBlob] = None
     published: bool = False
     
 

@@ -24,13 +24,3 @@ def delete_file(filename):
     except Exception as e:
         print(e)
         return False
-# def download_file(filename):
-#     try:
-#         bucket = storage_client.get_bucket(APP_GOOGLE_CLOUD_STORAGE_BUCKET)
-#         blob = bucket.blob(filename)
-#         returned = blob.download_as_string()
-#         print(returned)
-#         return True
-#     except Exception as e:
-#         print(e)
-#         return False

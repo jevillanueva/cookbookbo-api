@@ -81,7 +81,6 @@ async def update_image_recipe(
     # delete old image if exists after  upload new image
     if inserted.image is not None and result:
         deleted = google_cloud_storage.delete_file(inserted.image.name)
-        print(deleted)
     if result:
         blob = FileBlob(name=filename, url=url, content_type=content_type)
         inserted = RecipeService.update_image(inserted.id, blob)

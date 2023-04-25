@@ -12,6 +12,8 @@ class Token(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
     username: str
     token: str
+    jti: Optional[str] = None
+    expires : Optional[datetime] = None
     disabled: Optional[bool] = False
     date_insert: Optional[datetime] = None
     date_update: Optional[datetime] = None

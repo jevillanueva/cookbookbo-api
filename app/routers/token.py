@@ -27,7 +27,6 @@ async def get_token(user: UserInDB = Depends(get_actual_user), q: Optional[str] 
 @router.post("", response_model=Token, status_code=status.HTTP_201_CREATED)
 async def post_token(user: UserInDB = Depends(get_actual_user)):
     item = Token(token="", username=user.username)
-    print(item)
     item.username_insert = user.username
     ret = TokenService.create(item)
     item.id = ret.inserted_id

@@ -262,7 +262,6 @@ class RecipeService:
     def list_random(
         cls, page_number: int = 0, n_per_page: int = 100, published: bool = True
     ) -> List[Recipe]:
-        print (published)
         search = (
             cls.TABLE.aggregate(
                 [

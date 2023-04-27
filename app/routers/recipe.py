@@ -9,17 +9,18 @@ from app.models.recipe import (
     Recipe,
     RecipeInDB,
     RecipePublic,
-    RecipeUserPublic,
 )
 from app.models.result import Result
 from app.models.token import Token
-from app.models.user import User, UserInDB
+from app.models.user import UserInDB
 from app.services.recipe import RecipeService
 from app.utils.content_types import CONTENT_TYPES_IMAGE, CONTENT_TYPES_VALID
 from app.utils.exclusion_fields import RESULT_FORMAT
 from app.utils.mongo_validator import PyObjectId
 from app.utils import google_cloud_storage
 from app.utils.review_state import ReviewState
+
+from app.core.configuration import MAX_SIZE_IMAGE_MB
 
 router = APIRouter()
 
@@ -515,3 +516,59 @@ async def delete_publish_recipe_user(id: PyObjectId, user: Token = Depends(get_a
                 message="La receta ya se encuentra publicada"
             ).dict(),
         )
+    
+
+@router.patch(
+    "/user/public/{id}/image",
+    response_model=Recipe,
+    responses={
+        status.HTTP_200_OK: {"model": Recipe},
+        status.HTTP_404_NOT_FOUND: {"model": Result},
+        status.HTTP_400_BAD_REQUEST: {"model": Result},
+        status.HTTP_409_CONFLICT: {"model": Result},
+        status.HTTP_413_REQUEST_ENTITY_TOO_LARGE: {"model": Result},
+    },
+)
+async def update_image_recipe_user(
+    id: PyObjectId,
+    file: UploadFile,
+    user: Token = Depends(get_api_key_public),
+):
+    if not file.content_type in CONTENT_TYPES_IMAGE:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content=Result(
+                message=f"Formato no válido, únicos formatos permitidos: {','.join(CONTENT_TYPES_VALID)}"
+            ).dict(),
+        )
+    size_image = len(await file.read())
+    if size_image > MAX_SIZE_IMAGE_MB*1024*1024:
+        return JSONResponse(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            content=Result(
+                message=f"Tamaño de imagen no válido, máximo permitido: {MAX_SIZE_IMAGE_MB} MB"
+            ).dict(),
+        )
+    find = RecipeService.get_id_and_user(id=id, publisher=user.username)
+    if find is None:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=Result(message="Receta no encontrada").dict(),
+        )
+    if find.published is True:
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content=Result(
+                message="La receta ya se encuentra publicada, no se puede cambiar la imagen"
+            ).dict(),
+        )
+    result, filename, url, content_type = google_cloud_storage.upload_file(
+        find.id, file.filename, file.content_type, file.file
+    )
+    # delete old image if exists after  upload new image
+    if find.image is not None and result:
+        deleted = google_cloud_storage.delete_file(find.image.name)
+    if result:
+        blob = FileBlob(name=filename, url=url, content_type=content_type)
+        find = RecipeService.update_image(find.id, blob)
+    return find

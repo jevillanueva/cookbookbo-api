@@ -6,6 +6,7 @@ from pymongo.collection import ReturnDocument
 from app.core.database import db
 from app.models.recipe import FileBlob, Recipe, RecipeInDB
 from app.utils.mongo_validator import PyObjectId
+from app.utils.review_state import ReviewState
 
 
 class RecipeService:
@@ -112,12 +113,18 @@ class RecipeService:
         return items
     
     @classmethod
-    def list_public(cls, page_number: int = 0, n_per_page: int = 100, published: bool = True, publisher: str = "", reviewed: Optional[bool] = None, exclude_fields: dict = {} ) -> List[Recipe]:
+    def list_public(cls, page_number: int = 0, n_per_page: int = 100, published: bool = True, publisher: str = "", reviewed: ReviewState=ReviewState.IGNORE, exclude_fields: dict = {} ) -> List[Recipe]:
         query = {"disabled": False, "published": published}
         if publisher != "":
             query["publisher"] = publisher
-        if reviewed is not None:
-            query["reviewed"] = reviewed
+        if ReviewState.NOT_REVIEWED == reviewed:
+            query["reviewed"] = False    
+        if ReviewState.REVIEWED == reviewed:
+            query["reviewed"] = True    
+        if ReviewState.NOT_REQUESTED == reviewed:
+            query["reviewed"] = None    
+        if ReviewState.IGNORE == reviewed:
+            pass
         search = (
             cls.TABLE.find(query,exclude_fields)
             .skip(((page_number - 1) * n_per_page) if page_number > 0 else 0)
@@ -161,7 +168,8 @@ class RecipeService:
     
     @classmethod
     def search_public(
-        cls, q: str, page_number: int = 0, n_per_page: int = 100, published: bool = True, publisher: str = "", reviewed: Optional[bool] = None, exclude_fields: dict = {}
+        cls, q: str, page_number: int = 0, n_per_page: int = 100, published: bool = True, publisher: str = "", 
+        reviewed: ReviewState=ReviewState.IGNORE, exclude_fields: dict = {}
     ) -> List[Recipe]:
         query = {
                     "$and": [
@@ -182,8 +190,14 @@ class RecipeService:
                 }
         if publisher != "":
             query["$and"].append({"publisher": publisher})
-        if reviewed is not None:
-            query["$and"].append({"reviewed": reviewed})
+        if ReviewState.NOT_REVIEWED == reviewed:
+            query["$and"].append({"reviewed": False})    
+        if ReviewState.REVIEWED == reviewed:
+            query["$and"].append({"reviewed": True})    
+        if ReviewState.NOT_REQUESTED == reviewed:
+            query["$and"].append({"reviewed": None})    
+        if ReviewState.IGNORE == reviewed:
+            pass
         search = (
             cls.TABLE.find(query,exclude_fields)
             .skip(((page_number - 1) * n_per_page) if page_number > 0 else 0)
@@ -220,13 +234,19 @@ class RecipeService:
         return count
     
     @classmethod
-    def count_public(cls, q: str = "", published: bool = True , publisher: str = "", reviewed: Optional[bool] = None) -> int:
+    def count_public(cls, q: str = "", published: bool = True , publisher: str = "", reviewed: ReviewState=ReviewState.IGNORE) -> int:
         if q == "":
             query = {"disabled": False, "published": published}
             if publisher != "":
                 query["publisher"] = publisher
-            if reviewed is not None:
-                query["reviewed"] = reviewed
+            if ReviewState.NOT_REVIEWED == reviewed:
+                query["reviewed"] = False    
+            if ReviewState.REVIEWED == reviewed:
+                query["reviewed"] = True    
+            if ReviewState.NOT_REQUESTED == reviewed:
+                query["reviewed"] = None    
+            if ReviewState.IGNORE == reviewed:
+                pass
             count = cls.TABLE.count_documents(query)
         else:
             query = {
@@ -248,8 +268,14 @@ class RecipeService:
                 }
             if publisher != "":
                 query["$and"].append({"publisher": publisher})
-            if reviewed is not None:
-                query["$and"].append({"reviewed": reviewed})
+            if ReviewState.NOT_REVIEWED == reviewed:
+                query["$and"].append({"reviewed": False})    
+            if ReviewState.REVIEWED == reviewed:
+                query["$and"].append({"reviewed": True})    
+            if ReviewState.NOT_REQUESTED == reviewed:
+                query["$and"].append({"reviewed": None})    
+            if ReviewState.IGNORE == reviewed:
+                pass
             count = cls.TABLE.count_documents(query)
         return count
 

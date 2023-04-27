@@ -19,6 +19,7 @@ from app.utils.content_types import CONTENT_TYPES_IMAGE, CONTENT_TYPES_VALID
 from app.utils.exclusion_fields import RESULT_FORMAT
 from app.utils.mongo_validator import PyObjectId
 from app.utils import google_cloud_storage
+from app.utils.review_state import ReviewState
 
 router = APIRouter()
 
@@ -278,12 +279,12 @@ async def get_recipe(
                 page_number=page,
                 n_per_page=size,
                 published=False,
-                reviewed=True,
+                reviewed=ReviewState.REVIEWED,
                 publisher=user.username,
                 exclude_fields=RESULT_FORMAT.RECIPE_USER_PUBLIC_SEARCH,
             )
             count = RecipeService.count_public(
-                q=search, published=False, reviewed=True, publisher=user.username
+                q=search, published=False, reviewed=ReviewState.REVIEWED, publisher=user.username
             )
         elif state == "not_reviewed":
             result = RecipeService.search_public(
@@ -291,12 +292,12 @@ async def get_recipe(
                 page_number=page,
                 n_per_page=size,
                 published=False,
-                reviewed=False,
+                reviewed=ReviewState.NOT_REVIEWED,
                 publisher=user.username,
                 exclude_fields=RESULT_FORMAT.RECIPE_USER_PUBLIC_SEARCH,
             )
             count = RecipeService.count_public(
-                q=search, published=False, reviewed=False, publisher=user.username
+                q=search, published=False, reviewed=ReviewState.NOT_REVIEWED, publisher=user.username
             )
         elif state == "not_requested":
             result = RecipeService.search_public(
@@ -304,12 +305,12 @@ async def get_recipe(
                 page_number=page,
                 n_per_page=size,
                 published=False,
-                reviewed=None,
+                reviewed=ReviewState.NOT_REQUESTED,
                 publisher=user.username,
                 exclude_fields=RESULT_FORMAT.RECIPE_USER_PUBLIC_SEARCH,
             )
             count = RecipeService.count_public(
-                q=search, published=False, reviewed=None, publisher=user.username
+                q=search, published=False, reviewed=ReviewState.NOT_REQUESTED, publisher=user.username
             )
 
         return RecipePublic(content=result, total=count)
@@ -328,35 +329,35 @@ async def get_recipe(
                 page_number=page,
                 n_per_page=size,
                 published=False,
-                reviewed=True,
+                reviewed=ReviewState.REVIEWED,
                 publisher=user.username,
                 exclude_fields=RESULT_FORMAT.RECIPE_USER_PUBLIC_SEARCH,
             )
             count = RecipeService.count_public(
-                published=False, reviewed=True, publisher=user.username
+                published=False, reviewed=ReviewState.REVIEWED, publisher=user.username
             )
         elif state == "not_reviewed":
             result = RecipeService.list_public(
                 page_number=page,
                 n_per_page=size,
                 published=False,
-                reviewed=False,
+                reviewed=ReviewState.NOT_REVIEWED,
                 publisher=user.username,
                 exclude_fields=RESULT_FORMAT.RECIPE_USER_PUBLIC_SEARCH,
             )
             count = RecipeService.count_public(
-                published=False, reviewed=False, publisher=user.username
+                published=False, reviewed=ReviewState.NOT_REVIEWED, publisher=user.username
             )
         elif state == "not_requested":
             result = RecipeService.list_public(
                 page_number=page,
                 n_per_page=size,
                 published=False,
-                reviewed=None,
+                reviewed=ReviewState.NOT_REQUESTED,
                 publisher=user.username,
                 exclude_fields=RESULT_FORMAT.RECIPE_USER_PUBLIC_SEARCH,
             )
             count = RecipeService.count_public(
-                published=False, reviewed=None, publisher=user.username
+                published=False, reviewed=ReviewState.NOT_REQUESTED, publisher=user.username
             )
         return RecipePublic(content=result, total=count)

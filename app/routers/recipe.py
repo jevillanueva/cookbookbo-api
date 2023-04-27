@@ -201,7 +201,7 @@ async def get_recipe_skill(
 
 
 @router.get("/public", response_model=RecipePublic, status_code=status.HTTP_200_OK)
-async def get_recipe(
+async def get_recipe_public(
     search: Optional[str] = None,
     page: int = 0,
     size: int = 10,
@@ -235,7 +235,7 @@ async def get_recipe(
         status.HTTP_200_OK: {"model": Recipe},
     },
 )
-async def get_recipe(id: PyObjectId):
+async def get_recipe_id(id: PyObjectId):
     recipe = RecipeService.get_public(id=id, exclude_fields={"reviewed": 0})
     if recipe is None:
         return JSONResponse(
@@ -251,7 +251,7 @@ async def get_recipe(id: PyObjectId):
 # published = false and reviewed = false -> not_reviewed
 # published = false and reviewed = null -> not_requested
 @router.get("/user/public", response_model=RecipePublic, status_code=status.HTTP_200_OK)
-async def get_recipe(
+async def get_recipe_user(
     search: Optional[str] = None,
     page: int = 0,
     size: int = 100,
@@ -284,7 +284,10 @@ async def get_recipe(
                 exclude_fields=RESULT_FORMAT.RECIPE_USER_PUBLIC_SEARCH,
             )
             count = RecipeService.count_public(
-                q=search, published=False, reviewed=ReviewState.REVIEWED, publisher=user.username
+                q=search,
+                published=False,
+                reviewed=ReviewState.REVIEWED,
+                publisher=user.username,
             )
         elif state == "not_reviewed":
             result = RecipeService.search_public(
@@ -297,7 +300,10 @@ async def get_recipe(
                 exclude_fields=RESULT_FORMAT.RECIPE_USER_PUBLIC_SEARCH,
             )
             count = RecipeService.count_public(
-                q=search, published=False, reviewed=ReviewState.NOT_REVIEWED, publisher=user.username
+                q=search,
+                published=False,
+                reviewed=ReviewState.NOT_REVIEWED,
+                publisher=user.username,
             )
         elif state == "not_requested":
             result = RecipeService.search_public(
@@ -310,7 +316,10 @@ async def get_recipe(
                 exclude_fields=RESULT_FORMAT.RECIPE_USER_PUBLIC_SEARCH,
             )
             count = RecipeService.count_public(
-                q=search, published=False, reviewed=ReviewState.NOT_REQUESTED, publisher=user.username
+                q=search,
+                published=False,
+                reviewed=ReviewState.NOT_REQUESTED,
+                publisher=user.username,
             )
 
         return RecipePublic(content=result, total=count)
@@ -346,7 +355,9 @@ async def get_recipe(
                 exclude_fields=RESULT_FORMAT.RECIPE_USER_PUBLIC_SEARCH,
             )
             count = RecipeService.count_public(
-                published=False, reviewed=ReviewState.NOT_REVIEWED, publisher=user.username
+                published=False,
+                reviewed=ReviewState.NOT_REVIEWED,
+                publisher=user.username,
             )
         elif state == "not_requested":
             result = RecipeService.list_public(
@@ -358,6 +369,43 @@ async def get_recipe(
                 exclude_fields=RESULT_FORMAT.RECIPE_USER_PUBLIC_SEARCH,
             )
             count = RecipeService.count_public(
-                published=False, reviewed=ReviewState.NOT_REQUESTED, publisher=user.username
+                published=False,
+                reviewed=ReviewState.NOT_REQUESTED,
+                publisher=user.username,
             )
         return RecipePublic(content=result, total=count)
+
+
+@router.delete(
+    "/user/public/{id}",
+    responses={
+        status.HTTP_404_NOT_FOUND: {"model": Result},
+        status.HTTP_409_CONFLICT: {"model": Result},
+        status.HTTP_204_NO_CONTENT: {"model": None}
+    },
+)
+async def delete_recipe_user(id: PyObjectId, user: Token = Depends(get_api_key_public)):
+    itemDB = RecipeInDB()
+    itemDB.id = id
+    itemDB.publisher = user.username
+    itemDB.username_update = user.username
+    find = RecipeService.get_id_and_user(id=id, publisher=user.username)
+    if find is None:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=Result(message="Receta no encontrada").dict(),
+        )
+    if find.published is True:
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content=Result(
+                message="No se puede eliminar, elimine el estado público primero"
+            ).dict(),
+        )
+    deleted = RecipeService.delete_id_and_user(item=itemDB)
+    if deleted is None:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=Result(message="Receta no encontrada").dict(),
+        )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

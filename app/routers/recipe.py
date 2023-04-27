@@ -409,3 +409,109 @@ async def delete_recipe_user(id: PyObjectId, user: Token = Depends(get_api_key_p
             content=Result(message="Receta no encontrada").dict(),
         )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@router.patch(
+    "/user/public/{id}/review",
+    responses={
+        status.HTTP_404_NOT_FOUND: {"model": Result},
+        status.HTTP_409_CONFLICT: {"model": Result},
+        status.HTTP_200_OK: {"model": Recipe}
+    },
+)
+async def to_review_recipe_user(id: PyObjectId, user: Token = Depends(get_api_key_public)):
+    itemDB = RecipeInDB()
+    itemDB.id = id
+    itemDB.publisher = user.username
+    itemDB.username_update = user.username
+    find = RecipeService.get_id_and_user(id=id, publisher=user.username)
+    if find is None:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=Result(message="Receta no encontrada").dict(),
+        )
+    if find.published is True:
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content=Result(
+                message="La receta ya se encuentra publicada"
+            ).dict(),
+        )
+    itemDB.reviewed = False
+    reviewed = RecipeService.to_review_id_and_user(item=itemDB)
+    if reviewed is None:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=Result(message="Receta no encontrada").dict(),
+        )
+    return reviewed
+@router.patch(
+    "/user/public/{id}/unreview",
+    responses={
+        status.HTTP_404_NOT_FOUND: {"model": Result},
+        status.HTTP_409_CONFLICT: {"model": Result},
+        status.HTTP_200_OK: {"model": Recipe}
+    },
+)
+async def delete_review_recipe_user(id: PyObjectId, user: Token = Depends(get_api_key_public)):
+    itemDB = RecipeInDB()
+    itemDB.id = id
+    itemDB.publisher = user.username
+    itemDB.username_update = user.username
+    find = RecipeService.get_id_and_user(id=id, publisher=user.username)
+    if find is None:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=Result(message="Receta no encontrada").dict(),
+        )
+    if find.published is True:
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content=Result(
+                message="La receta ya se encuentra publicada"
+            ).dict(),
+        )
+    itemDB.reviewed = None
+    reviewed = RecipeService.to_review_id_and_user(item=itemDB)
+    if reviewed is None:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=Result(message="Receta no encontrada").dict(),
+        )
+    return reviewed
+
+@router.patch(
+    "/user/public/{id}/unpublish",
+    responses={
+        status.HTTP_404_NOT_FOUND: {"model": Result},
+        status.HTTP_409_CONFLICT: {"model": Result},
+        status.HTTP_200_OK: {"model": Recipe}
+    },
+)
+async def delete_publish_recipe_user(id: PyObjectId, user: Token = Depends(get_api_key_public)):
+    itemDB = RecipeInDB()
+    itemDB.id = id
+    itemDB.publisher = user.username
+    itemDB.username_update = user.username
+    find = RecipeService.get_id_and_user(id=id, publisher=user.username)
+    if find is None:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=Result(message="Receta no encontrada").dict(),
+        )
+    if find.published is True:
+        itemDB.reviewed = None
+        itemDB.published = False
+        reviewed = RecipeService.unpublish_id_and_user(item=itemDB)
+        if reviewed is None:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content=Result(message="Receta no encontrada").dict(),
+            )
+        return reviewed
+    else:
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content=Result(
+                message="La receta ya se encuentra publicada"
+            ).dict(),
+        )

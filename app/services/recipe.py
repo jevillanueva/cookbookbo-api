@@ -369,3 +369,43 @@ class RecipeService:
             return Recipe(**ret)
         else:
             return None
+
+
+    @classmethod
+    def to_review_id_and_user(cls, item: RecipeInDB) -> Recipe | None:
+        item.date_update = datetime.utcnow()
+        ret = cls.TABLE.find_one_and_update(
+            {"_id": item.id, "publisher":item.publisher, "disabled": False},
+            {
+                "$set": {
+                    "reviewed": item.reviewed,
+                    "date_update": item.date_update,
+                    "username_update": item.username_update,
+                }
+            },
+            return_document=ReturnDocument.AFTER,
+        )
+        if ret is not None:
+            return Recipe(**ret)
+        else:
+            return None    
+        
+    @classmethod
+    def unpublish_id_and_user(cls, item: RecipeInDB) -> Recipe | None:
+        item.date_update = datetime.utcnow()
+        ret = cls.TABLE.find_one_and_update(
+            {"_id": item.id, "publisher":item.publisher, "disabled": False},
+            {
+                "$set": {
+                    "reviewed": item.reviewed,
+                    "published": item.published,
+                    "date_update": item.date_update,
+                    "username_update": item.username_update,
+                }
+            },
+            return_document=ReturnDocument.AFTER,
+        )
+        if ret is not None:
+            return Recipe(**ret)
+        else:
+            return None    

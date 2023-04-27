@@ -1,14 +1,22 @@
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from fastapi import APIRouter, Depends, Response, UploadFile, status
 from fastapi.responses import JSONResponse
 
-from app.auth.access import get_actual_user, get_api_key
-from app.models.recipe import FileBlob, Recipe, RecipeInDB, RecipePublic
+from app.auth.access import get_actual_user, get_api_key, get_api_key_public
+from app.models.recipe import (
+    FileBlob,
+    Recipe,
+    RecipeInDB,
+    RecipePublic,
+    RecipeUserPublic,
+)
 from app.models.result import Result
+from app.models.token import Token
 from app.models.user import User, UserInDB
 from app.services.recipe import RecipeService
 from app.utils.content_types import CONTENT_TYPES_IMAGE, CONTENT_TYPES_VALID
+from app.utils.exclusion_fields import RESULT_FORMAT
 from app.utils.mongo_validator import PyObjectId
 from app.utils import google_cloud_storage
 
@@ -199,13 +207,20 @@ async def get_recipe(
 ):
     if search is not None:
         search_recipes = RecipeService.search_public(
-            q=search, page_number=page, n_per_page=size, published=True
+            q=search,
+            page_number=page,
+            n_per_page=size,
+            published=True,
+            exclude_fields=RESULT_FORMAT.RECIPE_PUBLIC_SEARCH,
         )
         count_recipes = RecipeService.count_public(q=search, published=True)
         print("count_recipes", count_recipes, search)
     else:
         search_recipes = RecipeService.list_public(
-            page_number=page, n_per_page=size, published=True
+            page_number=page,
+            n_per_page=size,
+            published=True,
+            exclude_fields=RESULT_FORMAT.RECIPE_PUBLIC_SEARCH,
         )
         count_recipes = RecipeService.count_public(published=True)
         print("count_recipes", count_recipes)
@@ -220,10 +235,128 @@ async def get_recipe(
     },
 )
 async def get_recipe(id: PyObjectId):
-    recipe = RecipeService.get_public(id=id)
+    recipe = RecipeService.get_public(id=id, exclude_fields={"reviewed": 0})
     if recipe is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content=Result(message="Recipe Not Found").dict(),
         )
     return recipe
+
+
+# states:
+# published = true -> published
+# published = false and reviewed = true  -> rejected
+# published = false and reviewed = false -> not_reviewed
+# published = false and reviewed = null -> not_requested
+@router.get("/user/public", response_model=RecipePublic, status_code=status.HTTP_200_OK)
+async def get_recipe(
+    search: Optional[str] = None,
+    page: int = 0,
+    size: int = 100,
+    state: Literal[
+        "published", "rejected", "not_reviewed", "not_requested"
+    ] = "not_requested",
+    user: Token = Depends(get_api_key_public),
+):
+    if search is not None:
+        if state == "published":
+            result = RecipeService.search_public(
+                q=search,
+                page_number=page,
+                n_per_page=size,
+                published=True,
+                publisher=user.username,
+                exclude_fields=RESULT_FORMAT.RECIPE_USER_PUBLIC_SEARCH,
+            )
+            count = RecipeService.count_public(
+                q=search, published=True, publisher=user.username
+            )
+        elif state == "rejected":
+            result = RecipeService.search_public(
+                q=search,
+                page_number=page,
+                n_per_page=size,
+                published=False,
+                reviewed=True,
+                publisher=user.username,
+                exclude_fields=RESULT_FORMAT.RECIPE_USER_PUBLIC_SEARCH,
+            )
+            count = RecipeService.count_public(
+                q=search, published=False, reviewed=True, publisher=user.username
+            )
+        elif state == "not_reviewed":
+            result = RecipeService.search_public(
+                q=search,
+                page_number=page,
+                n_per_page=size,
+                published=False,
+                reviewed=False,
+                publisher=user.username,
+                exclude_fields=RESULT_FORMAT.RECIPE_USER_PUBLIC_SEARCH,
+            )
+            count = RecipeService.count_public(
+                q=search, published=False, reviewed=False, publisher=user.username
+            )
+        elif state == "not_requested":
+            result = RecipeService.search_public(
+                q=search,
+                page_number=page,
+                n_per_page=size,
+                published=False,
+                reviewed=None,
+                publisher=user.username,
+                exclude_fields=RESULT_FORMAT.RECIPE_USER_PUBLIC_SEARCH,
+            )
+            count = RecipeService.count_public(
+                q=search, published=False, reviewed=None, publisher=user.username
+            )
+
+        return RecipePublic(content=result, total=count)
+    else:
+        if state == "published":
+            result = RecipeService.list_public(
+                page_number=page,
+                n_per_page=size,
+                published=True,
+                publisher=user.username,
+                exclude_fields=RESULT_FORMAT.RECIPE_USER_PUBLIC_SEARCH,
+            )
+            count = RecipeService.count_public(published=True, publisher=user.username)
+        elif state == "rejected":
+            result = RecipeService.list_public(
+                page_number=page,
+                n_per_page=size,
+                published=False,
+                reviewed=True,
+                publisher=user.username,
+                exclude_fields=RESULT_FORMAT.RECIPE_USER_PUBLIC_SEARCH,
+            )
+            count = RecipeService.count_public(
+                published=False, reviewed=True, publisher=user.username
+            )
+        elif state == "not_reviewed":
+            result = RecipeService.list_public(
+                page_number=page,
+                n_per_page=size,
+                published=False,
+                reviewed=False,
+                publisher=user.username,
+                exclude_fields=RESULT_FORMAT.RECIPE_USER_PUBLIC_SEARCH,
+            )
+            count = RecipeService.count_public(
+                published=False, reviewed=False, publisher=user.username
+            )
+        elif state == "not_requested":
+            result = RecipeService.list_public(
+                page_number=page,
+                n_per_page=size,
+                published=False,
+                reviewed=None,
+                publisher=user.username,
+                exclude_fields=RESULT_FORMAT.RECIPE_USER_PUBLIC_SEARCH,
+            )
+            count = RecipeService.count_public(
+                published=False, reviewed=None, publisher=user.username
+            )
+        return RecipePublic(content=result, total=count)

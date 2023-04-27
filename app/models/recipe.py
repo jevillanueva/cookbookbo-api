@@ -38,22 +38,35 @@ class Recipe(Base):
     lang: Optional[str] = None
     owner: Optional[str] = None
     publisher: Optional[str] = None
-    tags: List[str]
+    tags: List[str] = []
     year: int = 0
     location: Optional[str] = None
     category: List[str] = ["unknown"]
     portion: int = 0
     preparation_time_minutes: int = 0
     score: int = 0
-    preparation: List[Preparation]
+    preparation: List[Preparation] = []
     image: Optional[FileBlob] = None
     published: bool = False
+    reviewed: Optional[bool] = None
     
 
 
 class RecipePublic(Base):
     content: List[Recipe]
     total: Optional[int] = 0
+
+class RecipeUserPublic(Base):
+    # published = true
+    # published = false and reviewed = true  -> revisado y rechazado
+    # published = false and reviewed = false -> pendiente
+    # published = false and reviewed = null -> no revisado
+    published: RecipePublic = RecipePublic(content=[])
+    rejected: RecipePublic = RecipePublic(content=[])
+    not_reviewed: RecipePublic = RecipePublic(content=[])
+    not_requested: RecipePublic = RecipePublic(content=[])
+
+
 
 class RecipeInDB(Recipe):
     disabled: Optional[bool] = False

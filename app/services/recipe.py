@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from pymongo.collection import ReturnDocument
 
@@ -91,8 +91,9 @@ class RecipeService:
             return None
         
     @classmethod
-    def get_public(cls, id: PyObjectId) -> Recipe | None:
-        search = cls.TABLE.find_one({"_id": id, "disabled": False, "published": True})
+    def get_public(cls, id: PyObjectId, exclude_fields: dict = {}) -> Recipe | None:
+        query = {"_id": id, "disabled": False, "published": True}
+        search = cls.TABLE.find_one(query,exclude_fields)
         if search is not None:
             return Recipe(**search)
         else:
@@ -111,9 +112,14 @@ class RecipeService:
         return items
     
     @classmethod
-    def list_public(cls, page_number: int = 0, n_per_page: int = 100, published: bool = True) -> List[Recipe]:
+    def list_public(cls, page_number: int = 0, n_per_page: int = 100, published: bool = True, publisher: str = "", reviewed: Optional[bool] = None, exclude_fields: dict = {} ) -> List[Recipe]:
+        query = {"disabled": False, "published": published}
+        if publisher != "":
+            query["publisher"] = publisher
+        if reviewed is not None:
+            query["reviewed"] = reviewed
         search = (
-            cls.TABLE.find({"disabled": False, "published": published})
+            cls.TABLE.find(query,exclude_fields)
             .skip(((page_number - 1) * n_per_page) if page_number > 0 else 0)
             .limit(n_per_page)
         )
@@ -155,11 +161,9 @@ class RecipeService:
     
     @classmethod
     def search_public(
-        cls, q: str, page_number: int = 0, n_per_page: int = 100, published: bool = True
+        cls, q: str, page_number: int = 0, n_per_page: int = 100, published: bool = True, publisher: str = "", reviewed: Optional[bool] = None, exclude_fields: dict = {}
     ) -> List[Recipe]:
-        search = (
-            cls.TABLE.find(
-                {
+        query = {
                     "$and": [
                         {"disabled": False},
                         {"published": published},
@@ -176,7 +180,12 @@ class RecipeService:
                         },
                     ]
                 }
-            )
+        if publisher != "":
+            query["$and"].append({"publisher": publisher})
+        if reviewed is not None:
+            query["$and"].append({"reviewed": reviewed})
+        search = (
+            cls.TABLE.find(query,exclude_fields)
             .skip(((page_number - 1) * n_per_page) if page_number > 0 else 0)
             .limit(n_per_page)
         )
@@ -211,12 +220,16 @@ class RecipeService:
         return count
     
     @classmethod
-    def count_public(cls, q: str = "", published: bool = True ) -> int:
+    def count_public(cls, q: str = "", published: bool = True , publisher: str = "", reviewed: Optional[bool] = None) -> int:
         if q == "":
-            count = cls.TABLE.count_documents({"disabled": False, "published": published})
+            query = {"disabled": False, "published": published}
+            if publisher != "":
+                query["publisher"] = publisher
+            if reviewed is not None:
+                query["reviewed"] = reviewed
+            count = cls.TABLE.count_documents(query)
         else:
-            count = cls.TABLE.count_documents(
-                {
+            query = {
                     "$and": [
                         {"disabled": False},
                         {"published": published},
@@ -233,7 +246,11 @@ class RecipeService:
                         },
                     ]
                 }
-            )
+            if publisher != "":
+                query["$and"].append({"publisher": publisher})
+            if reviewed is not None:
+                query["$and"].append({"reviewed": reviewed})
+            count = cls.TABLE.count_documents(query)
         return count
 
     @classmethod

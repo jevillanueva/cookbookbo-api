@@ -216,7 +216,6 @@ async def get_recipe_public(
             exclude_fields=RESULT_FORMAT.RECIPE_PUBLIC_SEARCH,
         )
         count_recipes = RecipeService.count_public(q=search, published=True)
-        print("count_recipes", count_recipes, search)
     else:
         search_recipes = RecipeService.list_public(
             page_number=page,
@@ -225,7 +224,6 @@ async def get_recipe_public(
             exclude_fields=RESULT_FORMAT.RECIPE_PUBLIC_SEARCH,
         )
         count_recipes = RecipeService.count_public(published=True)
-        print("count_recipes", count_recipes)
     return RecipePublic(content=search_recipes, total=count_recipes)
 
 
@@ -628,7 +626,6 @@ async def get_recipe_user_id(id: PyObjectId,
     },
 )
 async def update_recipe_user(item: Recipe, user: Token = Depends(get_api_key_public)):
-    print (item)
     if item.id is None:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,

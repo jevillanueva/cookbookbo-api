@@ -82,7 +82,7 @@ async def login_public(request: Request):
             )
             ret = UserService.insert_or_update_user(userDB)
 
-            generated, token = TokenPublicService.create(Token(username=ret.email, token=""))
+            generated, token = TokenPublicService.create(Token(username=ret.username, token=""))
             return {"token": token}
     else:
         raise HTTPException(

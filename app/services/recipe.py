@@ -409,3 +409,28 @@ class RecipeService:
             return Recipe(**ret)
         else:
             return None    
+    @classmethod
+    def update_user(cls, item: RecipeInDB) -> Recipe | None:
+        if hasattr(item, "date_insert"):
+            delattr(item, "date_insert")
+        if hasattr(item, "username_insert"):
+            delattr(item, "username_insert")
+        if hasattr(item, "disabled"):
+            delattr(item, "disabled")
+        if hasattr(item, "publisher"):
+            delattr(item, "publisher")
+        if hasattr(item, "image"):
+            delattr(item, "image")
+        if hasattr(item, "score"):
+            delattr(item, "score")
+
+        item.date_update = datetime.utcnow()
+        ret = cls.TABLE.find_one_and_update(
+            {"_id": item.id, "disabled": False},
+            {"$set": item.dict(by_alias=True)},
+            return_document=ReturnDocument.AFTER,
+        )
+        if ret is not None:
+            return Recipe(**ret)
+        else:
+            return None

@@ -1,6 +1,6 @@
 from typing import List, Literal, Optional
 
-from fastapi import APIRouter, Depends, Response, UploadFile, status
+from fastapi import APIRouter, Depends, Request, Response, UploadFile, status
 from fastapi.responses import JSONResponse
 
 from app.auth.access import get_actual_user, get_api_key, get_api_key_public
@@ -530,6 +530,7 @@ async def delete_publish_recipe_user(id: PyObjectId, user: Token = Depends(get_a
     },
 )
 async def update_image_recipe_user(
+    request: Request,
     id: PyObjectId,
     file: UploadFile,
     user: Token = Depends(get_api_key_public),
@@ -541,7 +542,16 @@ async def update_image_recipe_user(
                 message=f"Formato no válido, únicos formatos permitidos: {','.join(CONTENT_TYPES_VALID)}"
             ).dict(),
         )
-    size_image = len(await file.read())
+    try:
+        size_image = request.headers.get("content-length")
+        size_image = int(size_image)
+    except:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content=Result(
+                message="Tamaño de imagen no válido"
+            ).dict(),
+        )
     if size_image > MAX_SIZE_IMAGE_MB*1024*1024:
         return JSONResponse(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
@@ -572,3 +582,102 @@ async def update_image_recipe_user(
         blob = FileBlob(name=filename, url=url, content_type=content_type)
         find = RecipeService.update_image(find.id, blob)
     return find
+
+
+@router.post(
+    "/user/public",
+    response_model=Recipe,
+    status_code=status.HTTP_201_CREATED,
+)
+async def insert_recipe_user(
+    item: Recipe,
+    user: Token = Depends(get_api_key_public),
+):
+    item.id = None
+    itemDB = RecipeInDB(**item.dict(by_alias=True))
+    itemDB.username_insert = user.username
+    itemDB.publisher = user.username
+    itemDB.published = False
+    itemDB.reviewed = None
+    inserted = RecipeService.insert(item=itemDB)
+    return inserted
+
+@router.get(
+    "/user/public/{id}",
+    responses={
+        status.HTTP_404_NOT_FOUND: {"model": Result},
+        status.HTTP_200_OK: {"model": Recipe},
+    },
+)
+async def get_recipe_user_id(id: PyObjectId,
+    user: Token = Depends(get_api_key_public)):
+    find = RecipeService.get_id_and_user(id=id, publisher=user.username)
+    if find is None:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=Result(message="Recipe Not Found").dict(),
+        )
+    return find
+
+@router.put(
+    "/user/public",
+    responses={
+        status.HTTP_200_OK: {"model": Recipe},
+        status.HTTP_400_BAD_REQUEST: {"model": Result},
+        status.HTTP_404_NOT_FOUND: {"model": Result},
+    },
+)
+async def update_recipe_user(item: Recipe, user: Token = Depends(get_api_key_public)):
+    print (item)
+    if item.id is None:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content=Result(message="ID es necesario").dict(),
+        )
+    
+    find = RecipeService.get_id_and_user(id=item.id, publisher=user.username)
+    if find is None:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=Result(message="Recipe no encontrada, no se puede editar").dict(),
+        )
+    if find.published is True:
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content=Result(
+                message="La receta ya se encuentra publicada, no se puede editar"
+            ).dict(),
+        )
+    if find.published is False and find.reviewed is False:
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content=Result(
+                message="La receta ya se encuentra en revisión, no se puede editar"
+            ).dict(),
+        )
+    itemDB = RecipeInDB()
+    itemDB.id = item.id
+    itemDB.name = item.name
+    itemDB.description = item.description
+    itemDB.lang = item.lang
+    itemDB.owner = item.owner
+    itemDB.tags = item.tags
+    itemDB.year = item.year
+    itemDB.location = item.location
+    itemDB.category = item.category
+    itemDB.portion = item.portion
+    itemDB.preparation_time_minutes = item.preparation_time_minutes
+    itemDB.preparation = item.preparation
+    itemDB.username_update = user.username
+    #New draft
+    itemDB.published = False
+    itemDB.reviewed = None
+
+    updated = RecipeService.update_user(itemDB)
+    if updated is None:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=Result(message="Recipe Not Found").dict(),
+        )
+    else:
+        return updated

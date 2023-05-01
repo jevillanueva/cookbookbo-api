@@ -26,5 +26,13 @@ spec:
         envFrom:
           - secretRef:
               name: cookbookbo-api
+        volumeMounts:
+          - name: cookbookbo-api-gcp-storage
+            mountPath: /app/keys
+            readOnly: true
         resources: {}
+      volumes:
+        - name: cookbookbo-api-gcp-storage
+          secret:
+            secretName: cookbookbo-api-gcp-storage
 status: {}

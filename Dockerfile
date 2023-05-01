@@ -1,5 +1,5 @@
 FROM python:3.10-alpine
-LABEL MAINTAINER="Jonathan Villanueva <frik_ej2v@hotmail.com>"
+LABEL MAINTAINER="Jonathan Villanueva <me@jevillanueva.dev>"
 RUN apk update && apk add --no-cache python3-dev \
     gcc \
     libc-dev \

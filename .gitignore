@@ -130,3 +130,11 @@ dmypy.json
 *.mongodb.js
 keys/*
 !keys/README.md
+
+k8s/*
+!k8s/deploy.yaml
+!k8s/service.yaml
+!k8s/ingress.yaml
+!k8s/expose.yaml
+!k8s/secret.yaml
+!k8s/secret_service_account.yaml

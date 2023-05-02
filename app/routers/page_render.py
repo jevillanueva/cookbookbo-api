@@ -9,7 +9,7 @@ router = APIRouter()
 
 
 @router.get("/{slug}")
-async def get_page(slug: str):
+async def get_page_render(slug: str):
     search = PageService.get_by_slug(slug=slug)
     if search is not None:
         return HTMLResponse(content=search.html, status_code=status.HTTP_200_OK)

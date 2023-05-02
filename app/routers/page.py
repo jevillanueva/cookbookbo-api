@@ -101,3 +101,15 @@ async def delete_page(id: PyObjectId, user: UserInDB = Depends(get_actual_user))
             content=Result(message="Page Not Found").dict(),
         )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@router.get("/{slug}", response_model=Page, status_code=status.HTTP_200_OK)
+async def get_page_id(
+    slug: str,
+):
+    search = PageService.get_by_slug(slug=slug)
+    if search is None:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=Result(message="Page not Found").dict(),
+        )
+    return search

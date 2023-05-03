@@ -81,7 +81,11 @@ async def login_public(request: Request):
                 disabled=False,
             )
             ret = UserService.insert_or_update_user(userDB)
-
+            if ret.disabled == True:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Usuario no disponible.",
+                )
             generated, token = TokenPublicService.create(Token(username=ret.username, token=""))
             return {"token": token}
     else:

@@ -243,6 +243,22 @@ async def get_recipe_id(id: PyObjectId):
         )
     return recipe
 
+@router.get(
+    "/public/{id}/meta",
+    responses={
+        status.HTTP_404_NOT_FOUND: {"model": Result},
+        status.HTTP_200_OK: {"model": Recipe},
+    },
+)
+async def get_recipe_id_meta(id: PyObjectId):
+    recipe = RecipeService.get_public(id=id, exclude_fields=RESULT_FORMAT.RECIPE_META)
+    if recipe is None:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=Result(message="Recipe Not Found").dict(),
+        )
+    return recipe
+
 
 # states:
 # published = true -> published

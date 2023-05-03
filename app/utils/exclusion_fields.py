@@ -21,3 +21,9 @@ class RESULT_FORMAT:
         "published": 1,
         "reviewed":1,
     }
+    RECIPE_META = {
+        "_id": 1,
+        "name": 1,
+        "description": 1,
+        "image": 1,
+    }

@@ -54,6 +54,15 @@ class UserService:
         else:
             return None
         
+        
+    @staticmethod
+    def get_user_public(username: str) -> UserInDB | None:
+        ret = db.user.find_one({"username": username, "disabled": False})
+        if ret is not None:
+            return UserInDB(**ret)
+        else:
+            return None
+        
     @staticmethod
     def exists_username(username: str) -> bool:
         ret = db.user.find_one({"username": username})

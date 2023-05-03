@@ -6,6 +6,7 @@ import uuid
 from app.core import configuration
 from app.core.database import db
 from app.models.token import Token
+from app.services.user import UserService
 from app.utils.currentmillis import current
 
 SECRET = configuration.APP_SECRET_TOKENS
@@ -48,7 +49,12 @@ class TokenPublicService:
             ret = TokenPublicService.get_by_jti(payload.get("jti"))
             if (ret is None):
                 return False, None
-            return True, Token(username=payload.get("sub"), jti=payload.get("jti"), token="")
+            username = username=payload.get("sub")
+            activeUser = UserService.get_user_public(username)
+            if (activeUser is None):
+                TokenPublicService.delete_by_jti(payload.get("jti"))
+                return False, None
+            return True, Token(username=username, jti=payload.get("jti"), token="")
         except JWTError:
             return None, None
 

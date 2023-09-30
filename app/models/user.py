@@ -2,12 +2,12 @@ from datetime import datetime
 from typing import Optional
 
 from bson import ObjectId
-from pydantic import BaseModel, Field
+from pydantic import ConfigDict, BaseModel, Field
 
+from app.models.base import Base
 from app.utils.mongo_validator import PyObjectId
 
-
-class User(BaseModel):
+class User(Base):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
     username: str
     email: Optional[str] = None
@@ -16,10 +16,6 @@ class User(BaseModel):
     family_name: Optional[str] = None
     disabled: Optional[bool] = False
     admin: Optional[bool] = False
-
-    class Config:
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
 
 
 class UserInDB(User):

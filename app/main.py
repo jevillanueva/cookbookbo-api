@@ -21,7 +21,6 @@ app = FastAPI(
     docs_url=None,
     redoc_url=None,
 )
-app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.add_middleware(
     SessionMiddleware, secret_key=configuration.APP_SECRET_KEY_MIDDLEWARE
@@ -44,20 +43,16 @@ def read_root():
 
 @app.get("/api/docs", tags=["Documentation"])  # Tag it as "documentation" for our docs
 async def get_documentation(
-    request: Request, user: Optional[dict] = Depends(get_actual_user)
-):  # This dependency protects our endpoint!
+    request: Request):
     response = get_swagger_ui_html(
         openapi_url="/api/openapi.json", title="Documentation",
-        swagger_js_url="/static/swagger-ui-bundle.js",
-        swagger_css_url="/static/swagger-ui.css",
     )
     return response
 
 
 @app.get("/api/openapi.json", tags=["Documentation"])
 async def get_open_api_endpoint(
-    request: Request, user: Optional[dict] = Depends(get_actual_user)
-):  # This dependency protects our endpoint!
+    request: Request): 
     response = JSONResponse(
         get_openapi(title=TITLE, version=VERSION, routes=app.routes)
     )
@@ -65,14 +60,12 @@ async def get_open_api_endpoint(
 
 
 @app.get("/api/redoc", tags=["Documentation"])  # Tag it as "documentation" for our docs
-async def redoc_html(
-    request: Request, user: Optional[dict] = Depends(get_actual_user)
-):  # This dependency protects our endpoint!
+async def redoc_html(request: Request): 
     response = get_redoc_html(openapi_url="/api/openapi.json", title="Documentation")
     return response
 
 
-app.include_router(oauth_google.router, prefix="/api/google", tags=["Security Google"])
+app.include_router(oauth_google.router, prefix="/api/google", tags=["Security Google"], include_in_schema=False)
 app.include_router(users.router, prefix="/api/users", tags=["Users"])
 app.include_router(token.router, prefix="/api/token", tags=["Token"])
 app.include_router(recipe.router, prefix="/api/recipe", tags=["Recipes"])

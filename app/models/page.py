@@ -2,12 +2,12 @@ from datetime import datetime
 from typing import Optional
 
 from bson import ObjectId
-from pydantic import BaseModel, Field
+from pydantic import ConfigDict, BaseModel, Field
 
 from app.utils.mongo_validator import PyObjectId
+from app.models.base import Base
 
-
-class Page(BaseModel):
+class Page(Base):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
     slug: str
     title: str
@@ -16,10 +16,6 @@ class Page(BaseModel):
                 <body>
                 </body>
                 </html>"""
-
-    class Config:
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
 
 
 class PageInDB(Page):

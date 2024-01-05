@@ -243,6 +243,7 @@ async def get_recipe_id(id: PyObjectId):
         )
     return recipe
 
+
 @router.get(
     "/public/{id}/meta",
     responses={
@@ -396,7 +397,7 @@ async def get_recipe_user(
     responses={
         status.HTTP_404_NOT_FOUND: {"model": Result},
         status.HTTP_409_CONFLICT: {"model": Result},
-        status.HTTP_204_NO_CONTENT: {"model": None}
+        status.HTTP_204_NO_CONTENT: {"model": None},
     },
 )
 async def delete_recipe_user(id: PyObjectId, user: Token = Depends(get_api_key_public)):
@@ -425,15 +426,18 @@ async def delete_recipe_user(id: PyObjectId, user: Token = Depends(get_api_key_p
         )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
+
 @router.patch(
     "/user/public/{id}/review",
     responses={
         status.HTTP_404_NOT_FOUND: {"model": Result},
         status.HTTP_409_CONFLICT: {"model": Result},
-        status.HTTP_200_OK: {"model": Recipe}
+        status.HTTP_200_OK: {"model": Recipe},
     },
 )
-async def to_review_recipe_user(id: PyObjectId, user: Token = Depends(get_api_key_public)):
+async def to_review_recipe_user(
+    id: PyObjectId, user: Token = Depends(get_api_key_public)
+):
     itemDB = RecipeInDB()
     itemDB.id = id
     itemDB.publisher = user.username
@@ -447,9 +451,7 @@ async def to_review_recipe_user(id: PyObjectId, user: Token = Depends(get_api_ke
     if find.published is True:
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
-            content=Result(
-                message="La receta ya se encuentra publicada"
-            ).dict(),
+            content=Result(message="La receta ya se encuentra publicada").dict(),
         )
     itemDB.reviewed = False
     reviewed = RecipeService.to_review_id_and_user(item=itemDB)
@@ -459,15 +461,19 @@ async def to_review_recipe_user(id: PyObjectId, user: Token = Depends(get_api_ke
             content=Result(message="Receta no encontrada").dict(),
         )
     return reviewed
+
+
 @router.patch(
     "/user/public/{id}/unreview",
     responses={
         status.HTTP_404_NOT_FOUND: {"model": Result},
         status.HTTP_409_CONFLICT: {"model": Result},
-        status.HTTP_200_OK: {"model": Recipe}
+        status.HTTP_200_OK: {"model": Recipe},
     },
 )
-async def delete_review_recipe_user(id: PyObjectId, user: Token = Depends(get_api_key_public)):
+async def delete_review_recipe_user(
+    id: PyObjectId, user: Token = Depends(get_api_key_public)
+):
     itemDB = RecipeInDB()
     itemDB.id = id
     itemDB.publisher = user.username
@@ -481,9 +487,7 @@ async def delete_review_recipe_user(id: PyObjectId, user: Token = Depends(get_ap
     if find.published is True:
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
-            content=Result(
-                message="La receta ya se encuentra publicada"
-            ).dict(),
+            content=Result(message="La receta ya se encuentra publicada").dict(),
         )
     itemDB.reviewed = None
     reviewed = RecipeService.to_review_id_and_user(item=itemDB)
@@ -494,15 +498,18 @@ async def delete_review_recipe_user(id: PyObjectId, user: Token = Depends(get_ap
         )
     return reviewed
 
+
 @router.patch(
     "/user/public/{id}/unpublish",
     responses={
         status.HTTP_404_NOT_FOUND: {"model": Result},
         status.HTTP_409_CONFLICT: {"model": Result},
-        status.HTTP_200_OK: {"model": Recipe}
+        status.HTTP_200_OK: {"model": Recipe},
     },
 )
-async def delete_publish_recipe_user(id: PyObjectId, user: Token = Depends(get_api_key_public)):
+async def delete_publish_recipe_user(
+    id: PyObjectId, user: Token = Depends(get_api_key_public)
+):
     itemDB = RecipeInDB()
     itemDB.id = id
     itemDB.publisher = user.username
@@ -526,11 +533,9 @@ async def delete_publish_recipe_user(id: PyObjectId, user: Token = Depends(get_a
     else:
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
-            content=Result(
-                message="La receta ya se encuentra publicada"
-            ).dict(),
+            content=Result(message="La receta ya se encuentra publicada").dict(),
         )
-    
+
 
 @router.patch(
     "/user/public/{id}/image",
@@ -562,11 +567,9 @@ async def update_image_recipe_user(
     except:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content=Result(
-                message="Tamaño de imagen no válido"
-            ).dict(),
+            content=Result(message="Tamaño de imagen no válido").dict(),
         )
-    if size_image > MAX_SIZE_IMAGE_MB*1024*1024:
+    if size_image > MAX_SIZE_IMAGE_MB * 1024 * 1024:
         return JSONResponse(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             content=Result(
@@ -616,6 +619,7 @@ async def insert_recipe_user(
     inserted = RecipeService.insert(item=itemDB)
     return inserted
 
+
 @router.get(
     "/user/public/{id}",
     responses={
@@ -623,8 +627,7 @@ async def insert_recipe_user(
         status.HTTP_200_OK: {"model": Recipe},
     },
 )
-async def get_recipe_user_id(id: PyObjectId,
-    user: Token = Depends(get_api_key_public)):
+async def get_recipe_user_id(id: PyObjectId, user: Token = Depends(get_api_key_public)):
     find = RecipeService.get_id_and_user(id=id, publisher=user.username)
     if find is None:
         return JSONResponse(
@@ -632,6 +635,7 @@ async def get_recipe_user_id(id: PyObjectId,
             content=Result(message="Recipe Not Found").dict(),
         )
     return find
+
 
 @router.put(
     "/user/public",
@@ -647,7 +651,6 @@ async def update_recipe_user(item: Recipe, user: Token = Depends(get_api_key_pub
             status_code=status.HTTP_400_BAD_REQUEST,
             content=Result(message="ID es necesario").dict(),
         )
-    
     find = RecipeService.get_id_and_user(id=item.id, publisher=user.username)
     if find is None:
         return JSONResponse(
@@ -682,7 +685,10 @@ async def update_recipe_user(item: Recipe, user: Token = Depends(get_api_key_pub
     itemDB.preparation_time_minutes = item.preparation_time_minutes
     itemDB.preparation = item.preparation
     itemDB.username_update = user.username
-    #New draft
+    itemDB.lat = item.lat
+    itemDB.lng = item.lng
+    itemDB.elevation = item.elevation
+    # New draft
     itemDB.published = False
     itemDB.reviewed = None
 

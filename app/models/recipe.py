@@ -13,7 +13,7 @@ class Ingredient(BaseModel):
     name: str
     optional: bool = False
     quantity_si: float
-    unit_si: Literal["kg","g","mg","l","dl","cl","ml","unknown"]
+    unit_si: Literal["kg", "g", "mg", "l", "dl", "cl", "ml", "unknown"]
     quantity_equivalence: float
     unit_equivalence: str
 
@@ -27,10 +27,13 @@ class Preparation(BaseModel):
     ingredients: List[Ingredient]
     steps: List[Step]
 
+
 class FileBlob(BaseModel):
     name: str
     url: str
     content_type: str
+
+
 class Recipe(Base):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
     name: Optional[str] = None
@@ -49,12 +52,15 @@ class Recipe(Base):
     image: Optional[FileBlob] = None
     published: bool = False
     reviewed: Optional[bool] = None
-    
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    elevation: Optional[float] = None
 
 
 class RecipePublic(Base):
     content: List[Recipe]
     total: Optional[int] = 0
+
 
 class RecipeUserPublic(Base):
     # published = true
@@ -65,7 +71,6 @@ class RecipeUserPublic(Base):
     rejected: RecipePublic = RecipePublic(content=[])
     not_reviewed: RecipePublic = RecipePublic(content=[])
     not_requested: RecipePublic = RecipePublic(content=[])
-
 
 
 class RecipeInDB(Recipe):

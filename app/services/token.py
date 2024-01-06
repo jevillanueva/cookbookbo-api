@@ -26,38 +26,38 @@ class TokenService:
         item.token = jws.sign(
             payload, SECRET, algorithm=configuration.APP_TOKEN_ALGORITHM
         )
-        ret = db.token.insert_one(item.dict(by_alias=True))
+        ret = db.token.insert_one(item.model_dump(by_alias=True))
         return ret
 
     @staticmethod
     def get_by_id_and_user(item: Token):
-        finded = db.token.find_one(
+        find = db.token.find_one(
             {"_id": item.id, "username": item.username, "disabled": False}
         )
-        if finded is not None:
-            return Token(**finded)
+        if find is not None:
+            return Token(**find)
         else:
             return None
 
     @staticmethod
     def get_token(item: Token):
-        finded = db.token.find_one({"disabled": False, "token": item.token})
-        if finded is None:
+        find = db.token.find_one({"disabled": False, "token": item.token})
+        if find is None:
             return None
         else:
-            return finded
+            return find
 
     @staticmethod
     def get(username: str):
-        finded = db.token.find({"disabled": False, "username": username})
+        finds = db.token.find({"disabled": False, "username": username})
         items = []
-        for find in finded:
+        for find in finds:
             items.append(Token(**find))
         return items
 
     @staticmethod
     def search(item: Token):
-        finded = db.token.find(
+        finds = db.token.find(
             {
                 "$and": [
                     {"disabled": False},
@@ -67,7 +67,7 @@ class TokenService:
             }
         )
         tokens = []
-        for find in finded:
+        for find in finds:
             tokens.append(Token(**find))
         return tokens
 

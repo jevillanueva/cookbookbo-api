@@ -14,21 +14,21 @@ class UserService:
     def insert_or_update_user(user: UserInDB) -> UserInDB:
         if hasattr(user, "id"):
             delattr(user, "id")
-        finded = UserService.get_user(user)
-        if finded is None:
+        find = UserService.get_user(user)
+        if find is None:
             exists_username = True
-            pattern = re.compile('[^%s]' % string.printable)
+            pattern = re.compile("[^%s]" % string.printable)
             while exists_username:
-                username_generated = f'{user.given_name}.{user.family_name}'.lower()
-                username_generated = pattern.sub('', username_generated)
-                username_generated = re.sub(' +', ' ', username_generated)
+                username_generated = f"{user.given_name}.{user.family_name}".lower()
+                username_generated = pattern.sub("", username_generated)
+                username_generated = re.sub(" +", " ", username_generated)
                 username_generated = username_generated.strip()
-                username_generated = username_generated.replace(" ",".")
-                username_generated = f'{username_generated}#{random.randint(1, 9999):04}'
-                exists_username =  UserService.exists_username(username_generated)
+                username_generated = username_generated.replace(" ", ".")
+                username_generated = f"{username_generated}#{random.randint(1, 9999):04}"
+                exists_username = UserService.exists_username(username_generated)
             user.username = username_generated
             user.date_insert = datetime.utcnow()
-            ret = db.user.insert_one(user.dict(by_alias=True))
+            ret = db.user.insert_one(user.model_dump(by_alias=True))
             ret = db.user.find_one({"_id": ret.inserted_id})
         else:
             if hasattr(user, "date_insert"):
@@ -38,10 +38,10 @@ class UserService:
             if hasattr(user, "username"):
                 delattr(user, "username")
             user.date_update = datetime.utcnow()
-            user.disabled = finded.disabled
+            user.disabled = find.disabled
             ret = db.user.find_one_and_update(
                 {"email": user.email},
-                {"$set": user.dict(by_alias=True)},
+                {"$set": user.model_dump(by_alias=True)},
                 return_document=ReturnDocument.AFTER,
             )
         return UserInDB(**ret)
@@ -53,8 +53,7 @@ class UserService:
             return UserInDB(**ret)
         else:
             return None
-        
-        
+
     @staticmethod
     def get_user_public(username: str) -> UserInDB | None:
         ret = db.user.find_one({"username": username, "disabled": False})
@@ -62,7 +61,7 @@ class UserService:
             return UserInDB(**ret)
         else:
             return None
-        
+
     @staticmethod
     def exists_username(username: str) -> bool:
         ret = db.user.find_one({"username": username})

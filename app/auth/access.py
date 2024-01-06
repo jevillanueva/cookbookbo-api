@@ -49,7 +49,7 @@ async def get_api_key(api_key: str = Security(api_key_header)):
     ret = TokenService.get_token(token)
     if ret is None:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Token unvalid"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Token"
         )
     else:
         try:
@@ -59,7 +59,7 @@ async def get_api_key(api_key: str = Security(api_key_header)):
             return UserInDB(**dict(json.loads(user)))
         except:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Token unvalid"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Token"
             )
 
 
@@ -68,10 +68,10 @@ async def get_api_key_public(api_key: str = Security(api_key_header)):
     status_ret, ret = TokenPublicService.validate_token(api_key)
     if status_ret is None and ret is None:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Token malformed"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Malformed Token"
         )
     if status_ret == False:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token unvalid"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Token"
         )
     return ret

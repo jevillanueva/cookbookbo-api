@@ -5,7 +5,6 @@ CONTENT_TYPES_IMAGE = [
     "image/jpeg",
     "image/png",
     "image/svg",
-    "image/webp"
+    "image/webp",
 ]
-CONTENT_TYPES_VALID = [
-"JPEG","JPG","PNG","SVG","GIF","WEBP","APNG","AVIF"]
+CONTENT_TYPES_VALID = ["JPEG", "JPG", "PNG", "SVG", "GIF", "WEBP", "APNG", "AVIF"]

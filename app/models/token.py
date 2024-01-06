@@ -1,8 +1,6 @@
 from datetime import datetime
 from typing import Optional
 
-from bson import ObjectId
-from pydantic import ConfigDict, BaseModel
 from pydantic.fields import Field
 from app.models.base import Base
 from app.utils.mongo_validator import PyObjectId

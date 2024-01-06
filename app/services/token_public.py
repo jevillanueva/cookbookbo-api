@@ -7,7 +7,6 @@ from app.core import configuration
 from app.core.database import db
 from app.models.token import Token
 from app.services.user import UserService
-from app.utils.currentmillis import current
 
 SECRET = configuration.APP_SECRET_TOKENS
 TIME_EXPIRES = configuration.APP_TOKEN_EXPIRES
@@ -30,7 +29,7 @@ class TokenPublicService:
         token = jwt.encode(payload, SECRET, algorithm=configuration.APP_TOKEN_ALGORITHM)
         item.jti = jti
         item.expires = expires
-        ret = db.token_public.insert_one(item.dict(by_alias=True))
+        ret = db.token_public.insert_one(item.model_dump(by_alias=True))
         return ret, token
 
     @staticmethod
@@ -41,17 +40,19 @@ class TokenPublicService:
             return_document=ReturnDocument.AFTER,
         )
         return ret
-    
+
     @staticmethod
     def validate_token(token: str):
         try:
-            payload = jwt.decode(token, SECRET, algorithms=[configuration.APP_TOKEN_ALGORITHM])
+            payload = jwt.decode(
+                token, SECRET, algorithms=[configuration.APP_TOKEN_ALGORITHM]
+            )
             ret = TokenPublicService.get_by_jti(payload.get("jti"))
-            if (ret is None):
+            if ret is None:
                 return False, None
-            username = username=payload.get("sub")
+            username = username = payload.get("sub")
             activeUser = UserService.get_user_public(username)
-            if (activeUser is None):
+            if activeUser is None:
                 TokenPublicService.delete_by_jti(payload.get("jti"))
                 return False, None
             return True, Token(username=username, jti=payload.get("jti"), token="")

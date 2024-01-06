@@ -1,8 +1,14 @@
 import os
 import uuid
 from google.cloud import storage
-from app.core.configuration import APP_GOOGLE_CLOUD_STORAGE, APP_GOOGLE_CLOUD_STORAGE_BUCKET
+from app.core.configuration import (
+    APP_GOOGLE_CLOUD_STORAGE,
+    APP_GOOGLE_CLOUD_STORAGE_BUCKET,
+)
+
 storage_client = storage.Client.from_service_account_json(APP_GOOGLE_CLOUD_STORAGE)
+
+
 def upload_file(id, filename, content_type, binary):
     new_filename = f"{id}-{uuid.uuid4()}-{filename}"
     try:

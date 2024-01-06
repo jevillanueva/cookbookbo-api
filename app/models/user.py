@@ -1,11 +1,11 @@
 from datetime import datetime
 from typing import Optional
 
-from bson import ObjectId
-from pydantic import ConfigDict, BaseModel, Field
+from pydantic import Field
 
 from app.models.base import Base
 from app.utils.mongo_validator import PyObjectId
+
 
 class User(Base):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)

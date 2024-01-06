@@ -42,7 +42,7 @@ async def insert_page(
 ):
     item = Page(title=title, slug=slug, html=htmlarea)
     item.id = None
-    itemDB = PageInDB(**item.dict(by_alias=True))
+    itemDB = PageInDB(**item.model_dump(by_alias=True))
     itemDB.username_insert = user.username
     inserted = PageService.insert(item=itemDB)
     return inserted
@@ -69,15 +69,15 @@ async def update_page(
     if item.id is None:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content=Result(message="Id Field Not Found").dict(),
+            content=Result(message="Id Field Not Found").model_dump(),
         )
-    itemDB = PageInDB(**item.dict(by_alias=True))
+    itemDB = PageInDB(**item.model_dump(by_alias=True))
     itemDB.username_update = user.username
     updated = PageService.update(itemDB)
     if updated is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=Result(message="Page Not Found").dict(),
+            content=Result(message="Page Not Found").model_dump(),
         )
     else:
         return updated
@@ -98,9 +98,10 @@ async def delete_page(id: PyObjectId, user: UserInDB = Depends(get_actual_user))
     if deleted is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=Result(message="Page Not Found").dict(),
+            content=Result(message="Page Not Found").model_dump(),
         )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
 
 @router.get("/{slug}", response_model=Page, status_code=status.HTTP_200_OK)
 async def get_page_id(
@@ -110,6 +111,6 @@ async def get_page_id(
     if search is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=Result(message="Page not Found").dict(),
+            content=Result(message="Page not Found").model_dump(),
         )
     return search

@@ -24,7 +24,7 @@ class PageService:
 
         ret = cls.get_by_slug(item.slug)
         if ret is None:
-            inserted = cls.TABLE.insert_one(item.dict(by_alias=True))
+            inserted = cls.TABLE.insert_one(item.model_dump(by_alias=True))
             ret = cls.get(PyObjectId(inserted.inserted_id))
             return ret
         else:
@@ -42,18 +42,16 @@ class PageService:
         ret = cls.get_by_slug(item.slug)
         if ret is None or item.id == ret.id:
             ret = cls.TABLE.find_one_and_update(
-                        {"_id": item.id, "disabled": False},
-                        {"$set": item.dict(by_alias=True)},
-                        return_document=ReturnDocument.AFTER,
-                    )
+                {"_id": item.id, "disabled": False},
+                {"$set": item.model_dump(by_alias=True)},
+                return_document=ReturnDocument.AFTER,
+            )
             if ret is not None:
                 return Page(**ret)
             else:
                 return None
         else:
             return None
-
-        
 
     @classmethod
     def delete(cls, item: PageInDB) -> Page | None:

@@ -16,5 +16,5 @@ async def get_page_render(slug: str):
     else:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=Result(message="Page not Found").dict(),
+            content=Result(message="Page not Found").model_dump(),
         )

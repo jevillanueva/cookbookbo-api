@@ -50,8 +50,6 @@ async def auth_server_side(request: Request):
         disabled=False,
     )
     ret = UserService.insert_or_update_user(userDB)
-
-    
     return Result(message="Login Success")
 
 
@@ -86,13 +84,16 @@ async def login_public(request: Request):
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Usuario no disponible.",
                 )
-            generated, token = TokenPublicService.create(Token(username=ret.username, token=""))
+            generated, token = TokenPublicService.create(
+                Token(username=ret.username, token="")
+            )
             return {"token": token}
     else:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Could not validate credentials.",
         )
+
 
 @router.get("/logout/public", response_model=Result)
 async def logout_public(user: Token = Depends(get_api_key_public)):

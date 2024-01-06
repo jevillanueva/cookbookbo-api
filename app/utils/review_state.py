@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class ReviewState (Enum):
+class ReviewState(Enum):
     IGNORE = 0
     REVIEWED = 1
     NOT_REVIEWED = 2

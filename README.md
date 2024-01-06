@@ -31,10 +31,10 @@ Para levantar el servicio
 kubectl create -f service.yaml
 ```
 
-Para levantar la exposicion mediante la ip del server se puede usar usando el explose.yml o el ingress.yaml que ya incluye configuracion de dominio.
+Para levantar la exposición mediante la ip del server se puede usar usando expose.yml o ingress.yaml que ya incluye configuración de dominio.
 
 ```bash
-kubect create -f ingress.yaml
+kubectl create -f ingress.yaml
 #o  
-kubect create -f expose.yaml
+kubectl create -f expose.yaml
 ```

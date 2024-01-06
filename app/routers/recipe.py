@@ -51,7 +51,7 @@ async def insert_recipe(
     user: UserInDB = Depends(get_actual_user),
 ):
     item.id = None
-    itemDB = RecipeInDB(**item.dict(by_alias=True))
+    itemDB = RecipeInDB(**item.model_dump(by_alias=True))
     itemDB.username_insert = user.username
     inserted = RecipeService.insert(item=itemDB)
     return inserted
@@ -76,13 +76,13 @@ async def update_image_recipe(
             status_code=status.HTTP_400_BAD_REQUEST,
             content=Result(
                 message=f"File not is a image, please use this formats: {','.join(CONTENT_TYPES_VALID)}"
-            ).dict(),
+            ).model_dump(),
         )
     inserted = RecipeService.get(id)
     if inserted is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=Result(message="Recipe Not Found").dict(),
+            content=Result(message="Recipe Not Found").model_dump(),
         )
 
     result, filename, url, content_type = google_cloud_storage.upload_file(
@@ -109,15 +109,15 @@ async def update_recipe(item: Recipe, user: UserInDB = Depends(get_actual_user))
     if item.id is None:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content=Result(message="Id Field Not Found").dict(),
+            content=Result(message="Id Field Not Found").model_dump(),
         )
-    itemDB = RecipeInDB(**item.dict(by_alias=True))
+    itemDB = RecipeInDB(**item.model_dump(by_alias=True))
     itemDB.username_update = user.username
     updated = RecipeService.update(itemDB)
     if updated is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=Result(message="Recipe Not Found").dict(),
+            content=Result(message="Recipe Not Found").model_dump(),
         )
     else:
         return updated
@@ -138,7 +138,7 @@ async def delete_recipe(id: PyObjectId, user: UserInDB = Depends(get_actual_user
     if deleted is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=Result(message="Recipe Not Found").dict(),
+            content=Result(message="Recipe Not Found").model_dump(),
         )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -158,7 +158,7 @@ async def publish_recipe(id: PyObjectId, user: UserInDB = Depends(get_actual_use
     if publish is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=Result(message="Recipe Not Found").dict(),
+            content=Result(message="Recipe Not Found").model_dump(),
         )
     return publish
 
@@ -178,7 +178,7 @@ async def unpublish_recipe(id: PyObjectId, user: UserInDB = Depends(get_actual_u
     if publish is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=Result(message="Recipe Not Found").dict(),
+            content=Result(message="Recipe Not Found").model_dump(),
         )
     return publish
 
@@ -239,7 +239,7 @@ async def get_recipe_id(id: PyObjectId):
     if recipe is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=Result(message="Recipe Not Found").dict(),
+            content=Result(message="Recipe Not Found").model_dump(),
         )
     return recipe
 
@@ -256,7 +256,7 @@ async def get_recipe_id_meta(id: PyObjectId):
     if recipe is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=Result(message="Recipe Not Found").dict(),
+            content=Result(message="Recipe Not Found").model_dump(),
         )
     return recipe
 
@@ -337,7 +337,6 @@ async def get_recipe_user(
                 reviewed=ReviewState.NOT_REQUESTED,
                 publisher=user.username,
             )
-
         return RecipePublic(content=result, total=count)
     else:
         if state == "published":
@@ -409,20 +408,20 @@ async def delete_recipe_user(id: PyObjectId, user: Token = Depends(get_api_key_p
     if find is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=Result(message="Receta no encontrada").dict(),
+            content=Result(message="Receta no encontrada").model_dump(),
         )
     if find.published is True:
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
             content=Result(
                 message="No se puede eliminar, elimine el estado público primero"
-            ).dict(),
+            ).model_dump(),
         )
     deleted = RecipeService.delete_id_and_user(item=itemDB)
     if deleted is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=Result(message="Receta no encontrada").dict(),
+            content=Result(message="Receta no encontrada").model_dump(),
         )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -446,19 +445,19 @@ async def to_review_recipe_user(
     if find is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=Result(message="Receta no encontrada").dict(),
+            content=Result(message="Receta no encontrada").model_dump(),
         )
     if find.published is True:
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
-            content=Result(message="La receta ya se encuentra publicada").dict(),
+            content=Result(message="La receta ya se encuentra publicada").model_dump(),
         )
     itemDB.reviewed = False
     reviewed = RecipeService.to_review_id_and_user(item=itemDB)
     if reviewed is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=Result(message="Receta no encontrada").dict(),
+            content=Result(message="Receta no encontrada").model_dump(),
         )
     return reviewed
 
@@ -482,19 +481,19 @@ async def delete_review_recipe_user(
     if find is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=Result(message="Receta no encontrada").dict(),
+            content=Result(message="Receta no encontrada").model_dump(),
         )
     if find.published is True:
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
-            content=Result(message="La receta ya se encuentra publicada").dict(),
+            content=Result(message="La receta ya se encuentra publicada").model_dump(),
         )
     itemDB.reviewed = None
     reviewed = RecipeService.to_review_id_and_user(item=itemDB)
     if reviewed is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=Result(message="Receta no encontrada").dict(),
+            content=Result(message="Receta no encontrada").model_dump(),
         )
     return reviewed
 
@@ -518,7 +517,7 @@ async def delete_publish_recipe_user(
     if find is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=Result(message="Receta no encontrada").dict(),
+            content=Result(message="Receta no encontrada").model_dump(),
         )
     if find.published is True:
         itemDB.reviewed = None
@@ -527,13 +526,13 @@ async def delete_publish_recipe_user(
         if reviewed is None:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
-                content=Result(message="Receta no encontrada").dict(),
+                content=Result(message="Receta no encontrada").model_dump(),
             )
         return reviewed
     else:
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
-            content=Result(message="La receta ya se encuentra publicada").dict(),
+            content=Result(message="La receta ya se encuentra publicada").model_dump(),
         )
 
 
@@ -559,7 +558,7 @@ async def update_image_recipe_user(
             status_code=status.HTTP_400_BAD_REQUEST,
             content=Result(
                 message=f"Formato no válido, únicos formatos permitidos: {','.join(CONTENT_TYPES_VALID)}"
-            ).dict(),
+            ).model_dump(),
         )
     try:
         size_image = request.headers.get("content-length")
@@ -567,27 +566,27 @@ async def update_image_recipe_user(
     except:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content=Result(message="Tamaño de imagen no válido").dict(),
+            content=Result(message="Tamaño de imagen no válido").model_dump(),
         )
     if size_image > MAX_SIZE_IMAGE_MB * 1024 * 1024:
         return JSONResponse(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             content=Result(
                 message=f"Tamaño de imagen no válido, máximo permitido: {MAX_SIZE_IMAGE_MB} MB"
-            ).dict(),
+            ).model_dump(),
         )
     find = RecipeService.get_id_and_user(id=id, publisher=user.username)
     if find is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=Result(message="Receta no encontrada").dict(),
+            content=Result(message="Receta no encontrada").model_dump(),
         )
     if find.published is True:
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
             content=Result(
                 message="La receta ya se encuentra publicada, no se puede cambiar la imagen"
-            ).dict(),
+            ).model_dump(),
         )
     result, filename, url, content_type = google_cloud_storage.upload_file(
         find.id, file.filename, file.content_type, file.file
@@ -611,7 +610,7 @@ async def insert_recipe_user(
     user: Token = Depends(get_api_key_public),
 ):
     item.id = None
-    itemDB = RecipeInDB(**item.dict(by_alias=True))
+    itemDB = RecipeInDB(**item.model_dump(by_alias=True))
     itemDB.username_insert = user.username
     itemDB.publisher = user.username
     itemDB.published = False
@@ -632,7 +631,7 @@ async def get_recipe_user_id(id: PyObjectId, user: Token = Depends(get_api_key_p
     if find is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=Result(message="Recipe Not Found").dict(),
+            content=Result(message="Recipe Not Found").model_dump(),
         )
     return find
 
@@ -649,27 +648,29 @@ async def update_recipe_user(item: Recipe, user: Token = Depends(get_api_key_pub
     if item.id is None:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content=Result(message="ID es necesario").dict(),
+            content=Result(message="ID es necesario").model_dump(),
         )
     find = RecipeService.get_id_and_user(id=item.id, publisher=user.username)
     if find is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=Result(message="Recipe no encontrada, no se puede editar").dict(),
+            content=Result(
+                message="Recipe no encontrada, no se puede editar"
+            ).model_dump(),
         )
     if find.published is True:
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
             content=Result(
                 message="La receta ya se encuentra publicada, no se puede editar"
-            ).dict(),
+            ).model_dump(),
         )
     if find.published is False and find.reviewed is False:
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
             content=Result(
                 message="La receta ya se encuentra en revisión, no se puede editar"
-            ).dict(),
+            ).model_dump(),
         )
     itemDB = RecipeInDB()
     itemDB.id = item.id
@@ -696,7 +697,7 @@ async def update_recipe_user(item: Recipe, user: Token = Depends(get_api_key_pub
     if updated is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=Result(message="Recipe Not Found").dict(),
+            content=Result(message="Recipe Not Found").model_dump(),
         )
     else:
         return updated

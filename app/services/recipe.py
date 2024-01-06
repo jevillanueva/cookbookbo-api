@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List
 
 from pymongo.collection import ReturnDocument
 
@@ -22,7 +22,7 @@ class RecipeService:
             delattr(item, "id")
         if hasattr(item, "username_update"):
             delattr(item, "username_update")
-        inserted = cls.TABLE.insert_one(item.dict(by_alias=True))
+        inserted = cls.TABLE.insert_one(item.model_dump(by_alias=True))
         ret = cls.get(PyObjectId(inserted.inserted_id))
         return ret
 
@@ -37,7 +37,7 @@ class RecipeService:
         item.date_update = datetime.utcnow()
         ret = cls.TABLE.find_one_and_update(
             {"_id": item.id, "disabled": False},
-            {"$set": item.dict(by_alias=True)},
+            {"$set": item.model_dump(by_alias=True)},
             return_document=ReturnDocument.AFTER,
         )
         if ret is not None:
@@ -63,12 +63,12 @@ class RecipeService:
             return Recipe(**ret)
         else:
             return None
-        
+
     @classmethod
     def delete_id_and_user(cls, item: RecipeInDB) -> Recipe | None:
         item.date_update = datetime.utcnow()
         ret = cls.TABLE.find_one_and_update(
-            {"_id": item.id, "publisher":item.publisher, "disabled": False},
+            {"_id": item.id, "publisher": item.publisher, "disabled": False},
             {
                 "$set": {
                     "disabled": True,
@@ -82,7 +82,7 @@ class RecipeService:
             return Recipe(**ret)
         else:
             return None
-        
+
     @classmethod
     def publish(cls, item: RecipeInDB, published: bool) -> Recipe | None:
         item.date_update = datetime.utcnow()
@@ -109,19 +109,21 @@ class RecipeService:
             return Recipe(**search)
         else:
             return None
-        
+
     @classmethod
-    def get_id_and_user(cls, id: PyObjectId, publisher:str) -> Recipe | None:
-        search = cls.TABLE.find_one({"_id": id, "disabled": False, "publisher": publisher})
+    def get_id_and_user(cls, id: PyObjectId, publisher: str) -> Recipe | None:
+        search = cls.TABLE.find_one(
+            {"_id": id, "disabled": False, "publisher": publisher}
+        )
         if search is not None:
             return Recipe(**search)
         else:
             return None
-        
+
     @classmethod
     def get_public(cls, id: PyObjectId, exclude_fields: dict = {}) -> Recipe | None:
         query = {"_id": id, "disabled": False, "published": True}
-        search = cls.TABLE.find_one(query,exclude_fields)
+        search = cls.TABLE.find_one(query, exclude_fields)
         if search is not None:
             return Recipe(**search)
         else:
@@ -138,22 +140,30 @@ class RecipeService:
         for find in search:
             items.append(Recipe(**find))
         return items
-    
+
     @classmethod
-    def list_public(cls, page_number: int = 0, n_per_page: int = 100, published: bool = True, publisher: str = "", reviewed: ReviewState=ReviewState.IGNORE, exclude_fields: dict = {} ) -> List[Recipe]:
+    def list_public(
+        cls,
+        page_number: int = 0,
+        n_per_page: int = 100,
+        published: bool = True,
+        publisher: str = "",
+        reviewed: ReviewState = ReviewState.IGNORE,
+        exclude_fields: dict = {},
+    ) -> List[Recipe]:
         query = {"disabled": False, "published": published}
         if publisher != "":
             query["publisher"] = publisher
         if ReviewState.NOT_REVIEWED == reviewed:
-            query["reviewed"] = False    
+            query["reviewed"] = False
         if ReviewState.REVIEWED == reviewed:
-            query["reviewed"] = True    
+            query["reviewed"] = True
         if ReviewState.NOT_REQUESTED == reviewed:
-            query["reviewed"] = None    
+            query["reviewed"] = None
         if ReviewState.IGNORE == reviewed:
             pass
         search = (
-            cls.TABLE.find(query,exclude_fields)
+            cls.TABLE.find(query, exclude_fields)
             .skip(((page_number - 1) * n_per_page) if page_number > 0 else 0)
             .limit(n_per_page)
         )
@@ -192,41 +202,47 @@ class RecipeService:
         for find in search:
             items.append(Recipe(**find))
         return items
-    
+
     @classmethod
     def search_public(
-        cls, q: str, page_number: int = 0, n_per_page: int = 100, published: bool = True, publisher: str = "", 
-        reviewed: ReviewState=ReviewState.IGNORE, exclude_fields: dict = {}
+        cls,
+        q: str,
+        page_number: int = 0,
+        n_per_page: int = 100,
+        published: bool = True,
+        publisher: str = "",
+        reviewed: ReviewState = ReviewState.IGNORE,
+        exclude_fields: dict = {},
     ) -> List[Recipe]:
         query = {
-                    "$and": [
-                        {"disabled": False},
-                        {"published": published},
+            "$and": [
+                {"disabled": False},
+                {"published": published},
+                {
+                    "$or": [
                         {
-                            "$or": [
-                                {
-                                    "description": {
-                                        "$regex": q,
-                                        "$options": "i",
-                                    }
-                                },
-                                {"name": {"$regex": q, "$options": "i"}},
-                            ]
+                            "description": {
+                                "$regex": q,
+                                "$options": "i",
+                            }
                         },
+                        {"name": {"$regex": q, "$options": "i"}},
                     ]
-                }
+                },
+            ]
+        }
         if publisher != "":
             query["$and"].append({"publisher": publisher})
         if ReviewState.NOT_REVIEWED == reviewed:
-            query["$and"].append({"reviewed": False})    
+            query["$and"].append({"reviewed": False})
         if ReviewState.REVIEWED == reviewed:
-            query["$and"].append({"reviewed": True})    
+            query["$and"].append({"reviewed": True})
         if ReviewState.NOT_REQUESTED == reviewed:
-            query["$and"].append({"reviewed": None})    
+            query["$and"].append({"reviewed": None})
         if ReviewState.IGNORE == reviewed:
             pass
         search = (
-            cls.TABLE.find(query,exclude_fields)
+            cls.TABLE.find(query, exclude_fields)
             .skip(((page_number - 1) * n_per_page) if page_number > 0 else 0)
             .limit(n_per_page)
         )
@@ -259,48 +275,54 @@ class RecipeService:
                 }
             )
         return count
-    
+
     @classmethod
-    def count_public(cls, q: str = "", published: bool = True , publisher: str = "", reviewed: ReviewState=ReviewState.IGNORE) -> int:
+    def count_public(
+        cls,
+        q: str = "",
+        published: bool = True,
+        publisher: str = "",
+        reviewed: ReviewState = ReviewState.IGNORE,
+    ) -> int:
         if q == "":
             query = {"disabled": False, "published": published}
             if publisher != "":
                 query["publisher"] = publisher
             if ReviewState.NOT_REVIEWED == reviewed:
-                query["reviewed"] = False    
+                query["reviewed"] = False
             if ReviewState.REVIEWED == reviewed:
-                query["reviewed"] = True    
+                query["reviewed"] = True
             if ReviewState.NOT_REQUESTED == reviewed:
-                query["reviewed"] = None    
+                query["reviewed"] = None
             if ReviewState.IGNORE == reviewed:
                 pass
             count = cls.TABLE.count_documents(query)
         else:
             query = {
-                    "$and": [
-                        {"disabled": False},
-                        {"published": published},
-                        {
-                            "$or": [
-                                {
-                                    "description": {
-                                        "$regex": q,
-                                        "$options": "i",
-                                    }
-                                },
-                                {"name": {"$regex": q, "$options": "i"}},
-                            ]
-                        },
-                    ]
-                }
+                "$and": [
+                    {"disabled": False},
+                    {"published": published},
+                    {
+                        "$or": [
+                            {
+                                "description": {
+                                    "$regex": q,
+                                    "$options": "i",
+                                }
+                            },
+                            {"name": {"$regex": q, "$options": "i"}},
+                        ]
+                    },
+                ]
+            }
             if publisher != "":
                 query["$and"].append({"publisher": publisher})
             if ReviewState.NOT_REVIEWED == reviewed:
-                query["$and"].append({"reviewed": False})    
+                query["$and"].append({"reviewed": False})
             if ReviewState.REVIEWED == reviewed:
-                query["$and"].append({"reviewed": True})    
+                query["$and"].append({"reviewed": True})
             if ReviewState.NOT_REQUESTED == reviewed:
-                query["$and"].append({"reviewed": None})    
+                query["$and"].append({"reviewed": None})
             if ReviewState.IGNORE == reviewed:
                 pass
             count = cls.TABLE.count_documents(query)
@@ -332,35 +354,37 @@ class RecipeService:
     def list_random(
         cls, page_number: int = 0, n_per_page: int = 100, published: bool = True
     ) -> List[Recipe]:
-        search = (
-            cls.TABLE.aggregate(
-                [
-                    {
-                        "$match": {
-                            "$and": [
-                                {"disabled": False},
-                                {"published": published},
-                            ]
-                        }
-                    },
-                    {"$sample": {"size": n_per_page}},
-                    {"$skip": ((page_number - 1) * n_per_page) if page_number > 0 else 0},
-                    {"$limit": n_per_page},
-                ]
-            )
+        search = cls.TABLE.aggregate(
+            [
+                {
+                    "$match": {
+                        "$and": [
+                            {"disabled": False},
+                            {"published": published},
+                        ]
+                    }
+                },
+                {"$sample": {"size": n_per_page}},
+                {"$skip": ((page_number - 1) * n_per_page) if page_number > 0 else 0},
+                {"$limit": n_per_page},
+            ]
         )
         items = []
         for find in search:
             items.append(Recipe(**find))
         return items
-    
+
     @classmethod
     def update_image(cls, id: PyObjectId, file: FileBlob) -> Recipe | None:
         ret = cls.TABLE.find_one_and_update(
             {"_id": id, "disabled": False},
             {
                 "$set": {
-                    "image": {"name":file.name, "url": file.url, "content_type": file.content_type},
+                    "image": {
+                        "name": file.name,
+                        "url": file.url,
+                        "content_type": file.content_type,
+                    },
                 }
             },
             return_document=ReturnDocument.AFTER,
@@ -370,12 +394,11 @@ class RecipeService:
         else:
             return None
 
-
     @classmethod
     def to_review_id_and_user(cls, item: RecipeInDB) -> Recipe | None:
         item.date_update = datetime.utcnow()
         ret = cls.TABLE.find_one_and_update(
-            {"_id": item.id, "publisher":item.publisher, "disabled": False},
+            {"_id": item.id, "publisher": item.publisher, "disabled": False},
             {
                 "$set": {
                     "reviewed": item.reviewed,
@@ -388,13 +411,13 @@ class RecipeService:
         if ret is not None:
             return Recipe(**ret)
         else:
-            return None    
-        
+            return None
+
     @classmethod
     def unpublish_id_and_user(cls, item: RecipeInDB) -> Recipe | None:
         item.date_update = datetime.utcnow()
         ret = cls.TABLE.find_one_and_update(
-            {"_id": item.id, "publisher":item.publisher, "disabled": False},
+            {"_id": item.id, "publisher": item.publisher, "disabled": False},
             {
                 "$set": {
                     "reviewed": item.reviewed,
@@ -408,7 +431,8 @@ class RecipeService:
         if ret is not None:
             return Recipe(**ret)
         else:
-            return None    
+            return None
+
     @classmethod
     def update_user(cls, item: RecipeInDB) -> Recipe | None:
         if hasattr(item, "date_insert"):
@@ -427,7 +451,7 @@ class RecipeService:
         item.date_update = datetime.utcnow()
         ret = cls.TABLE.find_one_and_update(
             {"_id": item.id, "disabled": False},
-            {"$set": item.dict(by_alias=True)},
+            {"$set": item.model_dump(by_alias=True)},
             return_document=ReturnDocument.AFTER,
         )
         if ret is not None:

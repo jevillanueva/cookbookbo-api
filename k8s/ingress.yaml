@@ -8,10 +8,10 @@ metadata:
 spec:
   tls:
   - hosts:
-    - api.cocinabo.jevillanueva.dev
+    - api.ayllufood.jevillanueva.dev
     secretName: quickstart-example-tls
   rules:
-  - host: api.cocinabo.jevillanueva.dev
+  - host: api.ayllufood.jevillanueva.dev
     http:
       paths:
       - path: /

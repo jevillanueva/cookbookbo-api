@@ -1,4 +1,4 @@
-# Cocina boliviana
+# Ayllu Food
 
 ## Desarrollo
 

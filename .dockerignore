@@ -10,3 +10,4 @@ docker-compose*.yaml
 .env.production
 venv
 k8s
+pyrightconfig.json

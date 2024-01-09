@@ -15,7 +15,15 @@ jobs:
     steps:
     - 
       name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
+      with:
+        fetch-tags: true
+    -
+      name: Configure Tags
+      run: |
+          TAG=$(git describe --tags --abbrev=7 --always)
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "Version: $TAG"
     -
       name: Set up QEMU
       uses: docker/setup-qemu-action@v2
@@ -36,4 +44,7 @@ jobs:
         context: .
         platforms: linux/amd64,linux/arm64
         push: true
-        tags: ${{ env.IMAGE_NAME }}:${{env.IMAGE_TAG}},${{ env.IMAGE_NAME }}:latest
+        tags: |
+          ${{ env.IMAGE_NAME }}:${{env.IMAGE_TAG}}
+          ${{ env.IMAGE_NAME }}:latest
+          ${{ env.IMAGE_NAME }}:${{env.TAG}}
